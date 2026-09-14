@@ -86,7 +86,10 @@ sambox/
 - **Utilitários:** Ferramentas POSIX padrão do ecossistema Linux (`grep`, `awk`, `sed`, `lspci`, `curl`).
 - **Privilégios:** Acesso de superusuário (`sudo`) é requerido exclusivamente para a execução de tarefas que modificam o sistema (limpeza profunda, alteração de repositórios e instalações do `apt`).
   
-  ## ⚖️ Licença
+  
+
+
+## ⚖️ Licença
   
   Distribuído sob os termos estáveis da **BSD 2-Clause License (Simplified)** — veja o arquivo [LICENSE](LICENSE) para detalhes técnicos. Uma licença pacífica, pragmática, comercialmente livre e sem atritos ou policiamentos ideológicos.
   Copyright (c) 2026, Sam Moreno. Todos os direitos reservados.

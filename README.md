@@ -77,20 +77,13 @@ sambox/
 └── README.md              # Documentação do projeto
 
 
-
 🛠️ Requisitos Mínimos
+Interpretador: Bash >= 4.0 (O Sambox roda em qualquer "batata eletrônica" estável, gastando poucos Megabytes de RAM).
+Terminal: Suporte a codificação UTF-8 (para renderização correta de caixas de texto e símbolos) e suporte a cores ANSI.
+Utilitários: Ferramentas POSIX padrão do ecossistema Linux (grep, awk, sed, lspci, curl).
 
-- **Interpretador:** Bash >= 4.0 (O Sambox roda em qualquer "batata eletrônica" estável, gastando poucos Megabytes de RAM).
-- **Terminal:** Suporte a codificação UTF-8 (para renderização correta de caixas de texto e símbolos) e suporte a cores ANSI.
-- **Utilitários:** Ferramentas POSIX padrão do ecossistema Linux (`grep`, `awk`, `sed`, `lspci`, `curl`).
-- **Privilégios:** Acesso de superusuário (`sudo`) é requerido exclusivamente para a execução de tarefas que modificam o sistema (limpeza profunda, alteração de repositórios e instalações do `apt`).
-  
-  
+Privilégios: Acesso de superusuário (sudo) é requerido exclusivamente para a execução de tarefas que modificam o sistema (limpeza profunda, alteração de repositórios e instalações do apt).
 
-
-## ⚖️ Licença
-  
-  Distribuído sob os termos estáveis da **BSD 2-Clause License (Simplified)** — veja o arquivo [LICENSE](LICENSE) para detalhes técnicos. Uma licença pacífica, pragmática, comercialmente livre e sem atritos ou policiamentos ideológicos.
-  Copyright (c) 2026, Sam Moreno. Todos os direitos reservados.
-
-
+⚖️ Licença
+Distribuído sob os termos estáveis da BSD 2-Clause License (Simplified) — veja o arquivo LICENSE para detalhes técnicos. Uma licença pacífica, pragmática, comercialmente livre e sem atritos ou policiamentos ideológicos.
+Copyright (c) 2026, Sam Moreno. Todos os direitos reservados.

@@ -62,7 +62,6 @@ sambox
 
 *(Nota: Ambientes pesados/inflados e altamente ideológicos como GNOME/KDE e navegadores com contradições e hipocrisias de mercado como Firefox foram cirurgicamente removidos do escopo de automação).*
 
-
 ## 📂 Estrutura do Projeto
 
 ```text
@@ -79,7 +78,7 @@ sambox/
 
 
 
-## 🛠️ Requisitos Mínimos
+🛠️ Requisitos Mínimos
 
 - **Interpretador:** Bash >= 4.0 (O Sambox roda em qualquer "batata eletrônica" estável, gastando poucos Megabytes de RAM).
 - **Terminal:** Suporte a codificação UTF-8 (para renderização correta de caixas de texto e símbolos) e suporte a cores ANSI.

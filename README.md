@@ -5,7 +5,6 @@
 ![SO](https://img.shields.io/badge/OS-Debian-A81D33.svg)
 
 
-
 Toolbox para administradores e entusiastas do minimalismo, feita 100% em Bash puro.
 
 Uma central modular, leve e de alta eficiência para administração, diagnóstico e gerenciamento de pacotes em sistemas Linux — desenvolvida sem amarras ideológicas e focada em performance bruta.

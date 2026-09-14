@@ -18,7 +18,7 @@ Uma central modular, leve e de alta eficiência para administração, diagnósti
 Clone o repositório e configure as permissões de execução do motor principal:
 
 ```bash
-git clone <repo-url> sambox
+git clone https://github.com/sammoreno-dev/sambox.git
 cd sambox
 chmod +x sambox
 ```

@@ -1,12 +1,20 @@
 # Sambox
 
-**Toolbox para administradores e entusiastas do minimalismo, feita 100% em Bash puro.**
+![Licença BSD](https://img.shields.io/badge/License-BSD_2--Clause-blue.svg)
+![Linguagem](https://img.shields.io/badge/Bash-100%25-4EAA25.svg)
+![SO](https://img.shields.io/badge/OS-Debian-A81D33.svg)
+
+Toolbox para administradores e entusiastas do minimalismo, feita 100% em Bash puro.
 
 Uma central modular, leve e de alta eficiência para administração, diagnóstico e gerenciamento de pacotes em sistemas Linux — desenvolvida sem amarras ideológicas e focada em performance bruta.
 
 ---
 
+<<<<<<< HEAD
 🏷️ Origem do Nome (Sambox)
+=======
+## 🏷️ Origem do Nome (Sambox)
+>>>>>>> a983c1b (Melhoria nas Tools do Sambox)
 
 O nome **Sambox** reflete a união entre autoria, utilidade prática e arquitetura limpa:
 
@@ -57,29 +65,32 @@ sambox
 
 *(Nota: Ambientes pesados/inflados e altamente ideológicos como GNOME/KDE e navegadores com contradições e hipocrisias de mercado como Firefox foram cirurgicamente removidos do escopo de automação).*
 
+
+
 ## 📂 Estrutura do Projeto
 
-sambox/  
-├── sambox # Entry-point principal (Orquestrador de módulos)  
-├── modules/  
-│ ├── m_hardware.sh # Diagnóstico de hardware e monitoramento de CPU  
-│ ├── m_system.sh # Ferramentas de manutenção e debloat de caches  
-│ ├── m_network.sh # Gerenciador de rede, SSH e firmwares proprietários  
-│ ├── m_packages.sh # Central de automação APT, drivers e virtualização  
-│ └── m_sysinfo.sh # Visão geral do sistema e exportador/dump de código-fonte  
-├── LICENSE # Termos da licença BSD-2-Clause  
-└── README.md # Este arquivo de documentação
-
-## 🛠️ Requisitos Mínimos
-
-- **Interpretador:** Bash >= 4.0 (O Sambox roda em qualquer "batata eletrônica" estável, gastando poucos Megabytes de RAM).
-- **Terminal:** Suporte a codificação UTF-8 (para renderização correta de caixas de texto e símbolos) e suporte a cores ANSI.
-- **Utilitários:** Ferramentas POSIX padrão do ecossistema Linux (`grep`, `awk`, `sed`, `lspci`, `curl`).
-- **Privilégios:** Acesso de superusuário (`sudo`) é requerido exclusivamente para a execução de tarefas que modificam o sistema (limpeza profunda, alteração de repositórios e instalações do `apt`).
-  
-  ## ⚖️ Licença
-  
-  Distribuído sob os termos estáveis da **BSD 2-Clause License (Simplified)** — veja o arquivo [LICENSE](LICENSE) para detalhes técnicos. Uma licença pacífica, pragmática, comercialmente livre e sem atritos ou policiamentos ideológicos.
-  Copyright (c) 2026, Sam Moreno. Todos os direitos reservados.
+```
+sambox/
+├── sambox                 # Orquestrador principal (Entry-point)
+├── modules/               # Módulos operacionais
+│   ├── m_hardware.sh      # Diagnóstico de hardware e CPU
+│   ├── m_network.sh       # Rede, SSH e gestão de firmwares
+│   ├── m_packages.sh      # Automação APT, drivers e QEMU-KVM
+│   ├── m_sysinfo.sh       # Relatório do sistema e exportador
+│   └── m_system.sh        # Manutenção do sistema e debloat
+├── LICENSE                # Licença BSD 2-Clause
+└── README.md              # Documentação do projeto
+```
 
 
+
+🛠️ Requisitos Mínimos
+Interpretador: Bash >= 4.0 (O Sambox roda em qualquer "batata eletrônica" estável, gastando poucos Megabytes de RAM).
+Terminal: Suporte a codificação UTF-8 (para renderização correta de caixas de texto e símbolos) e suporte a cores ANSI.
+Utilitários: Ferramentas POSIX padrão do ecossistema Linux (grep, awk, sed, lspci, curl).
+
+Privilégios: Acesso de superusuário (sudo) é requerido exclusivamente para a execução de tarefas que modificam o sistema (limpeza profunda, alteração de repositórios e instalações do apt).
+
+⚖️ Licença
+Distribuído sob os termos estáveis da BSD 2-Clause License (Simplified) — veja o arquivo LICENSE para detalhes técnicos. Uma licença pacífica, pragmática, comercialmente livre e sem atritos ou policiamentos ideológicos.
+Copyright (c) 2026, Sam Moreno. Todos os direitos reservados.

@@ -83,10 +83,10 @@ _main_menu() {
         _banner
         printf "  ${BOLD}MÓDULOS DISPONÍVEIS${RST}\n\n"
         printf "  ${CYAN}[1]${RST}  🔧  Hardware  — CPU Performance & Diagnostics\n"
-        printf "  ${CYAN}[2]${RST}  🧹  System   — Purge System Bloat & Caches\n"
-        printf "  ${CYAN}[3]${RST}  🌐  Network  — SSH Fast Connect Manager\n"
-        printf "  ${CYAN}[4]${RST}  📦  Packages — APT Control, Drivers & Desktops\n"
-        printf "  ${CYAN}[5]${RST}  ❓  SysInfo  — Concised System Overview\n" # Nova opção injetada na régua
+        printf "  ${CYAN}[2]${RST}  🗑️   Uninstall — Central de Remoção & Limpeza Profunda\n"
+        printf "  ${CYAN}[3]${RST}  🌐  Network   — SSH Fast Connect Manager\n"
+        printf "  ${CYAN}[4]${RST}  📦  Packages  — APT Control, Drivers & Desktops\n"
+        printf "  ${CYAN}[5]${RST}  ❓  SysInfo   — Concised System Overview\n"
         _sep
         printf "  ${CYAN}[0]${RST}  ❌  Sair\n\n"
 
@@ -94,10 +94,10 @@ _main_menu() {
 
         case "${choice}" in
             1) check_cpu_perf        ;;
-            2) purge_system_bloat    ;;
+            2) menu_uninstall_central ;; # Conectado ao módulo modules/m_uninstall.sh
             3) ssh_fast_connect      ;;
-            4) menu_packages_central ;;
-            5) show_system_info      ;; # Dispara a nova função concisa de informação de sistema
+            4) menu_packages_central ;; # Conectado ao módulo modules/m_packages.sh
+            5) show_system_info      ;;
             0) printf "\n"; _msg "Até logo!"; exit 0 ;;
             *) _warn "Opção inválida. Tente novamente." ;;
         esac

@@ -32,7 +32,7 @@ enable_non_free_repos() {
     if [[ -f /etc/apt/sources.list ]]; then
         sudo sed -i 's/main$/main contrib non-free non-free-firmware/g' /etc/apt/sources.list
         sudo sed -i 's/main main/main/g' /etc/apt/sources.list
-        _msg "Repositórios updated no sources.list primário."
+        _msg "Repositórios atualizados no sources.list primário."
     else
         _err "Erro: /etc/apt/sources.list não encontrado."
         return 1
@@ -49,7 +49,7 @@ install_gpu_drivers() {
     printf "Hardware detectado: ${CYAN}%s${RST}\n" "${gpu_info}"
 
     if echo "${gpu_info}" | grep -iq "nvidia"; then
-        printf "${YELLOW}[+]${RST} GPU NVIDIA detectada. Instalando drivers proprietários e libs 32-bit for Wine...\n"
+        printf "${YELLOW}[+]${RST} GPU NVIDIA detectada. Instalando drivers proprietários e libs 32-bit para Wine...\n"
         sudo apt install -y linux-headers-amd64 nvidia-driver nvidia-graphics-drivers-libs:i386 nvidia-vulkan-icd nvidia-vulkan-icd:i386
     elif echo "${gpu_info}" | grep -iqE "amd|ati"; then
         printf "${YELLOW}[+]${RST} GPU AMD detectada. Instalando firmware oficial aberto...\n"
@@ -87,11 +87,11 @@ install_lightweight_de() {
     _sep
     printf "         ${BOLD}SAMBOX - Interfaces Lightweight${RST}     \n"
     _sep
-    printf "  ${CYAN}${RST}  LXQt Desktop (Mínimo e Ultra-rápido)\n"
-    printf "  ${CYAN}${RST}  XFCE4 Desktop (Clássico e Estável)\n"
-    printf "  ${CYAN}${RST}  Cinnamon Desktop (Moderno e Tradicional)\n"
+    printf "  ${CYAN}[1]${RST}  LXQt Desktop (Mínimo e Ultra-rápido)\n"
+    printf "  ${CYAN}[2]${RST}  XFCE4 Desktop (Clássico e Estável)\n"
+    printf "  ${CYAN}[3]${RST}  Cinnamon Desktop (Moderno e Tradicional)\n"
     _sep
-    printf "  ${CYAN}${RST}  Voltar ao menu de pacotes\n\n"
+    printf "  ${CYAN}[0]${RST}  Voltar ao menu de pacotes\n\n"
     read -rp "  $(printf "${BOLD}")Escolha a interface:$(printf "${RST}") " de_opt
 
     case "${de_opt}" in
@@ -144,6 +144,98 @@ install_axel_accelerator() {
     _msg "Axel instalado com sucesso. Prontinho para downloads multi-threaded ultra-rápidos!"
 }
 
+# [10] Sub-menu para Instalação de IDEs e Ambientes de Programação
+install_ides_and_languages() {
+    local dev_menu
+    while true; do
+        clear 2>/dev/null || true
+        printf "\n"
+        printf "${CYAN}${BOLD}  ╔═══════════════════════════════════════════╗\n"
+        printf " ║     💻  IDEs E LINGUAGENS DE PROGRAMAÇÃO  ║\n"
+        printf " ╚═══════════════════════════════════════════╝${RST}\n\n"
+        printf "  ${CYAN}[1]${RST}  ⚡  C/C++ Stack (build-essential, gcc, g++, make, cmake, gdb)\n"
+        printf "  ${CYAN}[2]${RST}  🐍  Python 3 Stack (python3-full, pip, venv)\n"
+        printf "  ${CYAN}[3]${RST}  🟢  Node.js + npm (Runtime JS/TS Nativo APT)\n"
+        printf "  ${CYAN}[4]${RST}  🦫  Go / Golang (Compiler & Tools via APT)\n"
+        printf "  ${CYAN}[5]${RST}  🦀  Rust & Cargo (Toolchain Nativa APT)\n"
+        printf "  ${CYAN}[6]${RST}  📐  Geany (IDE Ultra-Leve GTK - Excelente para Debian)\n"
+        printf "  ${CYAN}[7]${RST}  💻  VSCodium (VS Code Open-Source sem Telemetria via APT)\n"
+        printf "  ${CYAN}[8]${RST}  📝  Neovim + Git + Tmux + Curl (Ambiente Dev CLI)\n"
+        printf "  ${CYAN}[9]${RST}  🚀  Instalar Kit Dev Completo (Todas as Linguagens + IDEs)\n"
+        printf "  ${CYAN}[10]${RST} ☕  Java Stack (OpenJDK + Maven + Gradle)\n"
+        printf "  ${DIM}────────────────────────────────────────────────${RST}\n"
+        printf "  ${CYAN}[0]${RST}  ⬅️   Voltar à Central de Pacotes\n\n"
+
+        read -rp "  $(printf "${BOLD}")Selecione [0-10]:$(printf "${RST}") " dev_menu
+
+        case "${dev_menu}" in
+            1)
+                printf "\n${YELLOW}[+]${RST} Instalando toolchain C/C++ via APT...\n"
+                sudo apt update -y && sudo apt install -y build-essential gcc g++ make cmake gdb
+                _msg "Ferramentas C/C++ instaladas com sucesso."
+                ;;
+            2)
+                printf "\n${YELLOW}[+]${RST} Instalando suporte a Python 3 e venv...\n"
+                sudo apt update -y && sudo apt install -y python3 python3-full python3-pip python3-venv
+                _msg "Python 3 Stack instalado com sucesso."
+                ;;
+            3)
+                printf "\n${YELLOW}[+]${RST} Instalando Node.js e npm via APT...\n"
+                sudo apt update -y && sudo apt install -y nodejs npm
+                _msg "Node.js e npm instalados."
+                ;;
+            4)
+                printf "\n${YELLOW}[+]${RST} Instalando compilador Go/Golang...\n"
+                sudo apt update -y && sudo apt install -y golang
+                _msg "Go instalado com sucesso."
+                ;;
+            5)
+                printf "\n${YELLOW}[+]${RST} Instalando Rust e Cargo...\n"
+                sudo apt update -y && sudo apt install -y rustc cargo
+                _msg "Rustc e Cargo instalados."
+                ;;
+            6)
+                printf "\n${YELLOW}[+]${RST} Instalando IDE Geany e plugins...\n"
+                sudo apt update -y && sudo apt install -y geany geany-plugins
+                _msg "Geany IDE instalado."
+                ;;
+            7)
+                printf "\n${BLUE}[+]${RST} Configurando repositório oficial APT do VSCodium (Sem Telemetria)...\n"
+                sudo apt update -y && sudo apt install -y wget gpg ca-certificates
+                wget -qO - https://gitlab.com/paulcarroty/vscodium-deb-rpm-repo/raw/master/pub.gpg | gpg --dearmor | sudo tee /usr/share/keyrings/vscodium-archive-keyring.gpg > /dev/null
+                echo 'deb [ signed-by=/usr/share/keyrings/vscodium-archive-keyring.gpg ] https://download.vscodium.com/debs vscodium main' | sudo tee /etc/apt/sources.list.d/vscodium.list
+                sudo apt update -y && sudo apt install -y codium
+                _msg "VSCodium instalado com sucesso e sem rastreamento."
+                ;;
+            8)
+                printf "\n${YELLOW}[+]${RST} Instalando ambiente de desenvolvimento em terminal...\n"
+                sudo apt update -y && sudo apt install -y neovim git tmux curl
+                _msg "Ambiente Dev CLI pronto para uso."
+                ;;
+            9)
+                printf "\n${BLUE}[+]${RST} Instalando Kit Dev Completo...\n"
+                export DEBIAN_FRONTEND=noninteractive
+                sudo apt update -y && sudo apt install -y build-essential gcc g++ make cmake gdb python3 python3-full python3-pip python3-venv nodejs npm golang rustc cargo geany geany-plugins neovim git tmux curl ca-certificates-java default-jdk default-jre maven gradle
+                _msg "Kit Dev Completo implantado no sistema!"
+                ;;
+            10)
+                printf "\n${BLUE}[+]${RST} Instalando OpenJDK, Maven e Gradle via APT...\n"
+                export DEBIAN_FRONTEND=noninteractive
+                if sudo apt update -y && sudo apt install -y ca-certificates-java default-jre default-jdk maven gradle; then
+                    _msg "Java (JDK/JRE), Maven e Gradle instalados com sucesso! 😁"
+                else
+                    _err "Falha ao instalar a Java Stack."
+                fi
+                ;;
+            0) break ;;
+            *) _warn "Opção inválida no sub-menu de desenvolvimento." ;;
+        esac
+
+        printf "\n"
+        read -rp "  Pressione [ENTER] para continuar..." _
+    done
+}
+
 # ── Função Orquestradora Principal do Módulo (Sempre no final) ──────────────
 menu_packages_central() {
     local p_menu
@@ -153,19 +245,20 @@ menu_packages_central() {
         printf "${CYAN}${BOLD}  ╔═══════════════════════════════════════════╗\n"
         printf " ║          📦  CENTRAL DE PACOTES           ║\n"
         printf " ╚═══════════════════════════════════════════╝${RST}\n\n"
-        printf "  ${CYAN}[1]${RST}  🔄  Ativar Repositórios (Contrib/Non-Free)\n"
-        printf "  ${CYAN}[2]${RST}  🎮  Auto-Detectar & Instalar Drivers de GPU\n"
-        printf "  ${CYAN}[3]${RST}  🍷  Configurar Ambiente Wine (i386/Limpo)\n"
-        printf "  ${CYAN}[4]${RST}  🌐  Instalar Chromium Web Browser (Nativo/Open-Source)\n"
-        printf "  ${CYAN}[5]${RST}  🖥️   Instalar Interfaces Gráficas Leves\n"
-        printf "  ${CYAN}[6]${RST}  🚀  Atualizar Pacotes do Sistema (APT Upgrade)\n"
-        printf "  ${CYAN}[7]${RST}  💻  Instalar QEMU + Aditivos de Virtualização\n"
-        printf "  ${CYAN}[8]${RST}  🗜️   Instalar File Roller (Compactador Nativo)\n"
-        printf "  ${CYAN}[9]${RST}  ⚡  Instalar Axel (Acelerador de Downloads CLI)\n"
+        printf "  ${CYAN}[01]${RST}   🔄  Ativar Repositórios (Contrib/Non-Free)\n"
+        printf "  ${CYAN}[2]${RST}   🎮  Auto-Detectar & Instalar Drivers de GPU\n"
+        printf "  ${CYAN}[3]${RST}   🍷  Configurar Ambiente Wine (i386/Limpo)\n"
+        printf "  ${CYAN}[4]${RST}   🌐  Instalar Chromium Web Browser (Nativo/Open-Source)\n"
+        printf "  ${CYAN}[5]${RST}   🖥️   Instalar Interfaces Gráficas Leves\n"
+        printf "  ${CYAN}[6]${RST}   🚀  Atualizar Pacotes do Sistema (APT Upgrade)\n"
+        printf "  ${CYAN}[7]${RST}   💻  Instalar QEMU + Aditivos de Virtualização\n"
+        printf "  ${CYAN}[8]${RST}   🗜️   Instalar File Roller (Compactador Nativo)\n"
+        printf "  ${CYAN}[9]${RST}   ⚡   Instalar Axel (Acelerador de Downloads CLI)\n"
+        printf "  ${CYAN}[10]${RST}  🛠️   Instalar IDEs e Linguagens de Programação\n"
         printf "  ${DIM}────────────────────────────────────────────────${RST}\n"
-        printf "  ${CYAN}[0]${RST}  ⬅️   Voltar ao Menu Principal\n\n"
+        printf "  ${CYAN}[0]${RST}   ⬅️   Voltar ao Menu Principal\n\n"
 
-        read -rp "  $(printf "${BOLD}")Selecione [0-9]:$(printf "${RST}") " p_menu
+        read -rp "  $(printf "${BOLD}")Selecione [0-10]:$(printf "${RST}") " p_menu
         
         case "${p_menu}" in
             1) enable_non_free_repos ;;
@@ -177,6 +270,7 @@ menu_packages_central() {
             7) install_qemu_virt        ;;
             8) install_file_roller_native ;;
             9) install_axel_accelerator   ;;
+            10) install_ides_and_languages ;;
             0) break ;;
             *) _warn "Opção inválida no sub-menu." ;;
         esac

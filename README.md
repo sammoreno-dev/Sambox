@@ -6,6 +6,13 @@ Uma central modular, leve e de alta eficiência para administração, diagnósti
 
 ---
 
+## 🏷️ Origem do Nome (Sambox)
+
+O nome **Sambox** reflete a união entre autoria, utilidade prática e arquitetura limpa:
+
+- **Sam:** A minha assinatura de propriedade técnica e minha responsabilidade como criador (**Sam** Moreno).
+- **Box:** O conceito vem de uma caixa de ferramentas minimalista e cirúrgica (*Tool**box***), projetada para atuar como uma central de controle ou painel de controle enxuto focado, sem o inchaço (*bloatware*) e os atritos que poluem os utilitários de mercado.
+
 ## ⚙️ Filosofia do Sambox
 
 - **Bash Puro:** Sem Python, C++, ou interpretadores externos redundantes.

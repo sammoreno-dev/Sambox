@@ -64,16 +64,47 @@ sambox
 
 ## 📂 Estrutura do Projeto
 
-sambox/  
-├── sambox # Entry-point principal (Orquestrador de módulos)  
-├── modules/  
-│ ├── m_hardware.sh # Diagnóstico de hardware e monitoramento de CPU  
-│ ├── m_system.sh # Ferramentas de manutenção e debloat de caches  
-│ ├── m_network.sh # Gerenciador de rede, SSH e firmwares proprietários  
-│ ├── m_packages.sh # Central de automação APT, drivers e virtualização  
-│ └── m_sysinfo.sh # Visão geral do sistema e exportador/dump de código-fonte  
-├── LICENSE # Termos da licença BSD-2-Clause  
-└── README.md # Este arquivo de documentação
+```mermaid
+graph TD
+    %% Nós principais
+    ROOT["<b>sambox/</b><br><i>Diretório Raiz</i>"]
+    MAIN["<b>sambox</b><br>Entry-point / Orquestrador"]
+    MODS["<b>modules/</b><br>Módulos de Execução"]
+    LIC["<b>LICENSE</b><br>Licença BSD-2-Clause"]
+    DOC["<b>README.md</b><br>Documentação do Projeto"]
+
+    %% Módulos internos
+    M_HW["<b>m_hardware.sh</b><br>Diagnóstico de HW e CPU"]
+    M_SYS["<b>m_system.sh</b><br>Manutenção e Debloat"]
+    M_NET["<b>m_network.sh</b><br>Rede, SSH e Firmwares"]
+    M_PKG["<b>m_packages.sh</b><br>APT, Drivers e Virtualização"]
+    M_INFO["<b>m_sysinfo.sh</b><br>Visão Geral e Dump de Código"]
+
+    %% Conexões
+    ROOT --> MAIN
+    ROOT --> MODS
+    ROOT --> LIC
+    ROOT --> DOC
+
+    MODS --> M_HW
+    MODS --> M_SYS
+    MODS --> M_NET
+    MODS --> M_PKG
+    MODS --> M_INFO
+
+    %% Estilização visual (Cores)
+    classDef rootStyle fill:#1f2937,stroke:#374151,color:#fff;
+    classDef mainStyle fill:#2563eb,stroke:#1d4ed8,color:#fff;
+    classDef modFolderStyle fill:#d97706,stroke:#b45309,color:#fff;
+    classDef modFileStyle fill:#374151,stroke:#4b5563,color:#e5e7eb;
+    classDef docStyle fill:#059669,stroke:#047857,color:#fff;
+
+    class ROOT rootStyle;
+    class MAIN mainStyle;
+    class MODS modFolderStyle;
+    class M_HW,M_SYS,M_NET,M_PKG,M_INFO modFileStyle;
+    class LIC,DOC docStyle;
+
 
 ## 🛠️ Requisitos Mínimos
 

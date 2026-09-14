@@ -31,7 +31,7 @@ Execute a ferramenta diretamente:
 
 ### Opcional: Instalação no Sistema
 
-Para invocar o Sambox de qualquer lugar do terminal, crie um link silicificado no seu `$PATH`:
+Para invocar o Sambox de qualquer lugar do terminal, crie um link simplificado no seu `$PATH`:
 
 ```bash
 sudo ln -s "\$(pwd)/sambox" /usr/local/bin/sambox

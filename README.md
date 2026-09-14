@@ -63,18 +63,20 @@ sambox
 *(Nota: Ambientes pesados/inflados e altamente ideológicos como GNOME/KDE e navegadores com contradições e hipocrisias de mercado como Firefox foram cirurgicamente removidos do escopo de automação).*
 
 
-```mermaid
-graph LR
-    ROOT["📂 sambox/"] --> MAIN["⚙️ sambox<br><i>(Orquestrador)</i>"]
-    ROOT --> MODS["📁 modules/"]
-    ROOT --> LIC["📜 LICENSE<br><i>(BSD-2-Clause)</i>"]
-    ROOT --> DOC["📘 README.md"]
+## 📂 Estrutura do Projeto
 
-    MODS --> M1["⚡ m_hardware.sh — Hardware & CPU"]
-    MODS --> M2["⚡ m_system.sh — Manutenção & Debloat"]
-    MODS --> M3["⚡ m_network.sh — Rede, SSH & Drivers"]
-    MODS --> M4["⚡ m_packages.sh — APT & Virtualização"]
-    MODS --> M5["⚡ m_sysinfo.sh — Info & Dump de Código"]
+```text
+sambox/
+├── sambox                 # Orquestrador principal (Entry-point)
+├── modules/               # Módulos operacionais
+│   ├── m_hardware.sh      # Diagnóstico de hardware e CPU
+│   ├── m_network.sh       # Rede, SSH e gestão de firmwares
+│   ├── m_packages.sh      # Automação APT, drivers e QEMU-KVM
+│   ├── m_sysinfo.sh       # Relatório do sistema e exportador
+│   └── m_system.sh        # Manutenção do sistema e debloat
+├── LICENSE                # Licença BSD 2-Clause
+└── README.md              # Documentação do projeto
+
 
 
 ## 🛠️ Requisitos Mínimos

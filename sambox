@@ -1,0 +1,124 @@
+#!/usr/bin/env bash
+# ============================================================================
+# BSD 2-Clause License (Simplified)
+#
+# Copyright (c) 2026, Sam Moreno
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+# ============================================================================
+#
+# sambox — System Administration & Diagnostics Toolbox
+# Entry-point principal e orquestrador de módulos.
+#
+
+set -euo pipefail
+
+# ── Constantes ──────────────────────────────────────────────────────────────
+readonly SAMBOX_VERSION="0.1.0"
+readonly SAMBOX_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly MODULES_DIR="${SAMBOX_DIR}/modules"
+
+# ── Códigos ANSI ────────────────────────────────────────────────────────────
+readonly RST='\033[0m'
+readonly BOLD='\033[1m'
+readonly RED='\033[0;31m'
+readonly GREEN='\033[0;32m'
+readonly YELLOW='\033[0;33m'
+readonly CYAN='\033[0;36m'
+readonly BLUE='\033[0;34m'
+readonly MAGENTA='\033[0;35m'
+readonly DIM='\033[2m'
+
+# ── Helpers de UI ───────────────────────────────────────────────────────────
+_banner() {
+    printf '\n'
+    printf "${CYAN}${BOLD}"
+    printf '  ╔═══════════════════════════════════════════╗\n'
+    printf '  ║           ⚙  S A M B O X  v%s          ║\n' "${SAMBOX_VERSION}"
+    printf '  ║   System Administration & Diagnostics     ║\n'
+    printf '  ╚═══════════════════════════════════════════╝\n'
+    printf "${RST}\n"
+}
+
+_msg()  { printf "${GREEN}[✔]${RST} %s\n" "$1"; }
+_warn() { printf "${YELLOW}[!]${RST} %s\n" "$1"; }
+_err()  { printf "${RED}[✖]${RST} %s\n" "$1" >&2; }
+_sep()  { printf "${DIM}────────────────────────────────────────────────${RST}\n"; }
+
+# ── Carregamento Dinâmico de Módulos ────────────────────────────────────────
+_load_modules() {
+    local mod
+    for mod in "${MODULES_DIR}"/*.sh; do
+        [[ -f "${mod}" ]] || continue
+        # shellcheck source=/dev/null
+        source "${mod}" || { _err "Falha ao carregar módulo: ${mod}"; exit 1; }
+    done
+}
+
+# ── Menu Principal ──────────────────────────────────────────────────────────
+_main_menu() {
+    local choice
+    while true; do
+        _banner
+        printf "  ${BOLD}MÓDULOS DISPONÍVEIS${RST}\n\n"
+        printf "  ${CYAN}[1]${RST}  🔧  Hardware  — CPU Performance & Diagnostics\n"
+        printf "  ${CYAN}[2]${RST}  🧹  System   — Purge System Bloat & Caches\n"
+        printf "  ${CYAN}[3]${RST}  🌐  Network  — SSH Fast Connect Manager\n"
+        printf "  ${CYAN}[4]${RST}  📦  Packages — APT Control, Drivers & Desktops\n"
+        printf "  ${CYAN}[5]${RST}  ❓  SysInfo  — Concised System Overview\n" # Nova opção injetada na régua
+        _sep
+        printf "  ${CYAN}[0]${RST}  ❌  Sair\n\n"
+
+        read -rp "  $(printf "${BOLD}")Selecione [0-5]:$(printf "${RST}") " choice
+
+        case "${choice}" in
+            1) check_cpu_perf        ;;
+            2) purge_system_bloat    ;;
+            3) ssh_fast_connect      ;;
+            4) menu_packages_central ;;
+            5) show_system_info      ;; # Dispara a nova função concisa de informação de sistema
+            0) printf "\n"; _msg "Até logo!"; exit 0 ;;
+            *) _warn "Opção inválida. Tente novamente." ;;
+        esac
+
+        printf "\n"
+        read -rp "  Pressione [ENTER] para voltar ao menu..." _
+        clear 2>/dev/null || true
+    done
+}
+
+# ── Inicialização ──────────────────────────────────────────────────────────
+_main() {
+    # Verificação mínima de ambiente
+    if [[ "${BASH_VERSINFO[0]}" -lt 4 ]]; then
+        _err "Sambox requer Bash >= 4.0 (detectado: ${BASH_VERSION})"
+        exit 1
+    fi
+
+    _load_modules
+    clear 2>/dev/null || true
+    _main_menu
+}
+
+_main "$@"

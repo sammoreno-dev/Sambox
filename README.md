@@ -1,6 +1,12 @@
 # Sambox
 
-**Toolbox para administradores e entusiastas do minimalismo, feita 100% em Bash puro.**
+![Licença BSD](https://img.shields.io/badge/License-BSD_2--Clause-blue.svg)
+![Linguagem](https://img.shields.io/badge/Bash-100%25-4EAA25.svg)
+![SO](https://img.shields.io/badge/OS-Debian-A81D33.svg)
+
+
+
+Toolbox para administradores e entusiastas do minimalismo, feita 100% em Bash puro.
 
 Uma central modular, leve e de alta eficiência para administração, diagnóstico e gerenciamento de pacotes em sistemas Linux — desenvolvida sem amarras ideológicas e focada em performance bruta.
 

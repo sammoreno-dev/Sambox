@@ -55,7 +55,7 @@ sambox
 
 | **Contexto** | **Arquivo** | **Função Principal** | **Descrição** |
 | --- | --- | --- | --- |
-| **Hardware** | `modules/m_hardware.sh` | `check_cpu_perf` | Diagnóstico de CPU: modelo, clocks por core e otimizações multi-core (Ex: Intel Xeon). |
+| **Hardware** | `modules/m_hardware.sh` | `menu_hardware_central` | Central de diagnósticos: performance de CPU/clocks, suporte KVM, barra ASCII de RAM, detecção de mídia (NVMe/SSD/HDD), sensores térmicos e DMI/BIOS. |
 | **System** | `modules/m_system.sh` | `purge_system_bloat` | Limpeza de caches residuais, eliminação de logs antigos e liberação segura de RAM via drop_caches. |
 | **Uninstaller** | `modules/m_uninstaller.sh` | `menu_uninstall_central` | Central de remoção: desinstalação completa de pacotes (`purge`), remoção de chaves GPG/repositórios externos e eliminação de processos ociosos e coisas que são inúteis pro user em segundo plano. |
 | **Network** | `modules/m_network.sh` | `ssh_fast_connect` | Gerenciador ágil de aliases e IPs locais para conexões remotas simplificadas via SSH(Secure Shell), além de diagnóstico físico de placas de rede e instalação de firmwares para não deixar na mão quem precisa de placa de rede ou Wi-Fi. |

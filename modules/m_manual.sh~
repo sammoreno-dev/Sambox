@@ -1,0 +1,97 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# SAMBOX — Módulo Manual & Documentação Interativa (modules/m_manual.sh)
+# Licença: BSD 2-Clause
+# ==============================================================================
+
+# Nota: As variáveis de cor (CYAN, BOLD, YELLOW, GREEN, RED, RST) são herdadas
+# diretamente do motor principal (sambox.sh).
+
+_show_manual_header() {
+    clear 2>/dev/null || true
+    printf "${CYAN}${BOLD}"
+    printf '  ╔═══════════════════════════════════════════╗\n'
+    printf '  ║     📖  SAMBOX MANUAL & DOCUMENTAÇÃO     ║\n'
+    printf '  ╚═══════════════════════════════════════════╝\n'
+    printf "${RST}\n"
+    printf "  Documentação oficial e guia dos módulos integrados no sistema.\n\n"
+}
+
+_show_chapter_1() {
+    cat << EOF | less -R
+${BOLD}${CYAN}=== CAPÍTULO 1: FILOSOFIA & GOVERNANÇA ===${RST}
+
+${BOLD}1. Visão Geral:${RST}
+O Sambox é uma caixa de ferramentas em Bash 4.0+ puro, ultra-leve e modular,
+focada em desempenho máximo para distribuições Debian e derivados.
+
+${BOLD}2. Licenciamento BSD 2-Clause (Permissivo):${RST}
+- O código é 100% livre para uso, modificação e redistribuição sem travas.
+- Imune a licenças copyleft virais (GPL, AGPL, LGPL, MPL, CDDL).
+- Protegido por pipeline automatizado no GitHub Actions contra contaminação.
+
+${BOLD}3. Arquitetura Standalone:${RST}
+- Pode rodar diretamente via terminal sem instalar dependências externas.
+- Baixo consumo de memória e execução em milissegundos.
+
+(Pressione 'q' para fechar)
+EOF
+}
+
+_show_chapter_2() {
+    cat << EOF | less -R
+${BOLD}${CYAN}=== CAPÍTULO 2: GUIA DOS MÓDULOS ===${RST}
+
+${GREEN}[1] Hardware:${RST}   Diagnóstico térmico e monitoramento de performance da CPU.
+${GREEN}[2] Uninstall:${RST}  Central de remoção limpa de softwares e pacotes órfãos.
+${GREEN}[3] Network:${RST}    Gerenciador rápido de conexões SSH e diagnóstico de rede.
+${GREEN}[4] Packages:${RST}   Controle do APT, manutenção de repositórios e drivers.
+${GREEN}[5] SysInfo:${RST}    Resumo sintético das especificações do sistema host.
+
+(Pressione 'q' para fechar)
+EOF
+}
+
+_show_full_manual() {
+    cat << EOF | less -R
+${BOLD}${YELLOW}======================================================================
+               🧰 SAMBOX — MANUAL DE INSTRUÇÕES COMPLETO
+======================================================================${RST}
+
+${BOLD}REQUISITOS:${RST} Bash 4.0+ em distribuições Linux POSIX/Debian.
+${BOLD}LICENÇA:${RST}    BSD 2-Clause
+
+${CYAN}EXECUÇÃO RÁPIDA:${RST}
+  ./sambox.sh              Abre o menu interativo
+  ./sambox.sh --manual     Abre o leitor interativo de manual direto
+  ./sambox.sh --version    Exibe a versão do sistema
+
+${CYAN}FILOSOFIA DE DESENVOLVIMENTO:${RST}
+  O Sambox foi concebido para entregar a eficiência de hardware de ponta:
+  frio, veloz e sem desperdício de ciclos de processamento ou dependências pesadas.
+
+(Pressione 'q' para fechar)
+EOF
+}
+
+show_manual_menu() {
+    local opt
+    while true; do
+        _show_manual_header
+        printf "  ${CYAN}[1]${RST}  📜  Capítulo 1 — Filosofia, Licença BSD & Zero Copyleft\n"
+        printf "  ${CYAN}[2]${RST}  ⚙️   Capítulo 2 — Guia Completo dos Módulos Integrados\n"
+        printf "  ${CYAN}[3]${RST}  📚  Manual Completo (Modo Pager)\n"
+        printf "  ────────────────────────────────────────────────\n"
+        printf "  ${CYAN}[0]${RST}  ⬅️   Voltar ao Menu Principal\n\n"
+
+        read -rp "  Selecione [0-3]: " opt
+
+        case "${opt}" in
+            1) _show_chapter_1 ;;
+            2) _show_chapter_2 ;;
+            3) _show_full_manual ;;
+            0) break ;;
+            *) printf "${YELLOW}[!] Opção inválida!${RST}\n" && sleep 1 ;;
+        esac
+    done
+}

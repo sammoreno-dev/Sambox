@@ -174,7 +174,7 @@ _main_menu() {
         read -rp "  $(printf "${BOLD}")Selecione [0-6]:$(printf "${RST}") " choice
 
         case "${choice}" in
-            1) check_cpu_perf        ;;
+            1) menu_hardware_central        ;;
             2) menu_uninstall_central ;; # Conectado ao módulo modules/m_uninstall.sh
             3) ssh_fast_connect      ;;
             4) menu_packages_central ;; # Conectado ao módulo modules/m_packages.sh

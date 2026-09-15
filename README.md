@@ -76,6 +76,7 @@ sambox/
 │   ├── m_network.sh        # Gerenciador de rede, SSH e firmwares proprietários
 │   ├── m_packages.sh       # Central de automação APT, drivers e virtualização
 │   └── m_sysinfo.sh        # Visão geral do sistema e exportador/dump de código-fonte
+|   └── m_manual.sh         # Manual do Sambox
 ├── LICENSE                 # Termos da licença BSD-2-Clause
 └── README.md               # Este arquivo de documentação
 ```

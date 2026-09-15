@@ -245,7 +245,7 @@ menu_packages_central() {
         printf "${CYAN}${BOLD}  ╔═══════════════════════════════════════════╗\n"
         printf " ║          📦  CENTRAL DE PACOTES           ║\n"
         printf " ╚═══════════════════════════════════════════╝${RST}\n\n"
-        printf "  ${CYAN}[01]${RST}   🔄  Ativar Repositórios (Contrib/Non-Free)\n"
+        printf "  ${CYAN}[1]${RST}   🔄  Ativar Repositórios (Contrib/Non-Free)\n"
         printf "  ${CYAN}[2]${RST}   🎮  Auto-Detectar & Instalar Drivers de GPU\n"
         printf "  ${CYAN}[3]${RST}   🍷  Configurar Ambiente Wine (i386/Limpo)\n"
         printf "  ${CYAN}[4]${RST}   🌐  Instalar Chromium Web Browser (Nativo/Open-Source)\n"

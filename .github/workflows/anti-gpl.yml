@@ -1,0 +1,34 @@
+# ==============================================================================
+# 🛡️ SAMBOX SECURITY GATE - ANTI-GPL WORKFLOW
+# Licença: BSD 2-Clause | Autor: Sam Moreno (Human-Architected, AI-Forged)
+# ==============================================================================
+name: "🛡️ Blindagem de Licença Sambox"
+
+on:
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - 'modules/**'
+jobs:
+  auditoria:
+    name: "🔍 Varredura de Código"
+    runs-on: ubuntu-latest
+    steps:
+      - name: "📥 Clonando o Pull Request"
+        uses: actions/checkout@v4
+
+      - name: "🕵️‍♂️ Varredura Cirúrgica Anti-Copyleft"
+        run: |
+          printf "\033[36m[SAMBOX SECURITY]:\033[0m Iniciando varredura analítica nos arquivos enviados...\n"
+          
+          # Executa o grep recursivo ignorando maiúsculas nas palavras-chave da GPL
+          if grep -r -i -E "GPL|General Public|LGPL|AGPL|DGPL|Copyleft|MPL|CDDL" modules/; then
+              printf "\n\033[31m[ERRO CRÍTICO]: Tentativa de contágio viral detectada!\033[0m\n"
+              printf "Módulos sob licenças restritivas não são aceitos no ecossistema Sambox.\n"
+              printf "O Sambox aceita apenas BSD, MIT, Apache, Zlib, CC0 e WTFPL.\n"
+              printf "Amadorismo jurídico e burocracia ideológica aqui não se criam!\n\n"
+              exit 1
+          fi
+          
+          printf "\n\033[32m[SUCESSO]: Módulo validado com licença livre e sem frescura.\033[0m\n"
+

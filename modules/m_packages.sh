@@ -29,16 +29,49 @@
 # [1] Função para ativar repositórios contrib, non-free e non-free-firmware
 enable_non_free_repos() {
     printf "\n${YELLOW}[+]${RST} Ativando componentes contrib, non-free e non-free-firmware...\n"
+    
+    local modified=0
+
+    # 1. Formato DEB822 (Debian 12+ em /etc/apt/sources.list.d/debian.sources)
+    if [[ -f /etc/apt/sources.list.d/debian.sources ]]; then
+        sudo cp /etc/apt/sources.list.d/debian.sources /etc/apt/sources.list.d/debian.sources.bak 2>/dev/null
+        
+        # Insere os componentes na linha 'Components:' apenas se ainda não existirem
+        sudo sed -i '/^Components:/ {
+            /contrib/! s/$/ contrib/
+            /\bnon-free\b/! s/$/ non-free/
+            /non-free-firmware/! s/$/ non-free-firmware/
+        }' /etc/apt/sources.list.d/debian.sources
+        
+        modified=1
+    fi
+
+    # 2. Formato Tradicional (/etc/apt/sources.list)
     if [[ -f /etc/apt/sources.list ]]; then
-        sudo sed -i 's/main$/main contrib non-free non-free-firmware/g' /etc/apt/sources.list
-        sudo sed -i 's/main main/main/g' /etc/apt/sources.list
-        _msg "Repositórios atualizados no sources.list primário."
+        sudo cp /etc/apt/sources.list /etc/apt/sources.list.bak 2>/dev/null
+        
+        # Localiza linhas ativas do APT e injeta os componentes faltantes logo após 'main'
+        sudo sed -i -E '/^deb(-src)? / {
+            /contrib/! s/\bmain\b/main contrib/
+            /\bnon-free\b/! s/\bmain\b/main non-free/
+            /non-free-firmware/! s/\bmain\b/main non-free-firmware/
+        }' /etc/apt/sources.list
+        
+        # Limpa eventuais espaços duplos residuais
+        sudo sed -i 's/  */ /g' /etc/apt/sources.list
+        
+        modified=1
+    fi
+
+    # 3. Validação e Atualização
+    if [[ $modified -eq 1 ]]; then
+        _msg "Repositórios atualizados com sucesso (backup criado em .bak)."
+        printf "${YELLOW}[+]${RST} Atualizando índices do APT...\n"
+        sudo apt-get update -qq && _msg "Índices do APT sincronizados."
     else
-        _err "Erro: /etc/apt/sources.list não encontrado."
+        _err "Erro: Nenhum arquivo de fontes (/etc/apt/sources.list ou debian.sources) foi encontrado."
         return 1
     fi
-    printf "${YELLOW}[+]${RST} Atualizando índices do APT...\n"
-    sudo apt update -y
 }
 
 # [2] Função para instalar drivers de vídeo baseados no hardware detectado

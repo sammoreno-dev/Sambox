@@ -36,14 +36,11 @@ enable_non_free_repos() {
     if [[ -f /etc/apt/sources.list.d/debian.sources ]]; then
         sudo cp /etc/apt/sources.list.d/debian.sources /etc/apt/sources.list.d/debian.sources.bak 2>/dev/null
         
-        sudo awk '
-        /^Components:/ {
-            if ($0 !~ /(^|[[:space:]])contrib([[:space:]]|$)/) $0 = $0 " contrib"
-            if ($0 !~ /(^|[[:space:]])non-free([[:space:]]|$)/) $0 = $0 " non-free"
-            if ($0 !~ /(^|[[:space:]])non-free-firmware([[:space:]]|$)/) $0 = $0 " non-free-firmware"
-        }
-        { print }
-        ' /etc/apt/sources.list.d/debian.sources.bak | sudo tee /etc/apt/sources.list.d/debian.sources >/dev/null
+        sudo sed -i -E '/^Components:/ {
+            /(^|[[:space:]])contrib([[:space:]]|$)/! s/$/ contrib/
+            /(^|[[:space:]])non-free([[:space:]]|$)/! s/$/ non-free/
+            /(^|[[:space:]])non-free-firmware([[:space:]]|$)/! s/$/ non-free-firmware/
+        }' /etc/apt/sources.list.d/debian.sources
         
         modified=1
     fi
@@ -52,14 +49,11 @@ enable_non_free_repos() {
     if [[ -f /etc/apt/sources.list ]]; then
         sudo cp /etc/apt/sources.list /etc/apt/sources.list.bak 2>/dev/null
         
-        sudo awk '
-        /^[[:space:]]*deb(-src)?[[:space:]]+/ && !/cdrom:/ {
-            if ($0 !~ /(^|[[:space:]])contrib([[:space:]]|$)/) $0 = $0 " contrib"
-            if ($0 !~ /(^|[[:space:]])non-free([[:space:]]|$)/) $0 = $0 " non-free"
-            if ($0 !~ /(^|[[:space:]])non-free-firmware([[:space:]]|$)/) $0 = $0 " non-free-firmware"
-        }
-        { print }
-        ' /etc/apt/sources.list.bak | sudo tee /etc/apt/sources.list >/dev/null
+        sudo sed -i -E '/^[[:space:]]*deb(-src)?[[:space:]]+/ {
+            /(^|[[:space:]])contrib([[:space:]]|$)/! s/$/ contrib/
+            /(^|[[:space:]])non-free([[:space:]]|$)/! s/$/ non-free/
+            /(^|[[:space:]])non-free-firmware([[:space:]]|$)/! s/$/ non-free-firmware/
+        }' /etc/apt/sources.list
         
         modified=1
     fi
@@ -71,7 +65,7 @@ enable_non_free_repos() {
         if sudo apt-get update; then
             _msg "Índices do APT sincronizados com sucesso!"
         else
-            _err "Falha ao atualizar os índices do APT. Verifique sua conexão com a internet."
+            _err "Falha ao atualizar os índices do APT."
             return 1
         fi
     else
@@ -79,6 +73,7 @@ enable_non_free_repos() {
         return 1
     fi
 }
+
 
 # [2] Função para instalar drivers de vídeo baseados no hardware detectado
 install_gpu_drivers() {

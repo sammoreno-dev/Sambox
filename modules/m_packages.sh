@@ -36,12 +36,14 @@ enable_non_free_repos() {
     if [[ -f /etc/apt/sources.list.d/debian.sources ]]; then
         sudo cp /etc/apt/sources.list.d/debian.sources /etc/apt/sources.list.d/debian.sources.bak 2>/dev/null
         
-        # Insere os componentes na linha 'Components:' apenas se ainda não existirem
-        sudo sed -i '/^Components:/ {
-            /contrib/! s/$/ contrib/
-            /\bnon-free\b/! s/$/ non-free/
-            /non-free-firmware/! s/$/ non-free-firmware/
-        }' /etc/apt/sources.list.d/debian.sources
+        sudo awk '
+        /^Components:/ {
+            if ($0 !~ /(^|[[:space:]])contrib([[:space:]]|$)/) $0 = $0 " contrib"
+            if ($0 !~ /(^|[[:space:]])non-free([[:space:]]|$)/) $0 = $0 " non-free"
+            if ($0 !~ /(^|[[:space:]])non-free-firmware([[:space:]]|$)/) $0 = $0 " non-free-firmware"
+        }
+        { print }
+        ' /etc/apt/sources.list.d/debian.sources.bak | sudo tee /etc/apt/sources.list.d/debian.sources >/dev/null
         
         modified=1
     fi
@@ -50,15 +52,14 @@ enable_non_free_repos() {
     if [[ -f /etc/apt/sources.list ]]; then
         sudo cp /etc/apt/sources.list /etc/apt/sources.list.bak 2>/dev/null
         
-        # Localiza linhas ativas do APT e injeta os componentes faltantes logo após 'main'
-        sudo sed -i -E '/^deb(-src)? / {
-            /contrib/! s/\bmain\b/main contrib/
-            /\bnon-free\b/! s/\bmain\b/main non-free/
-            /non-free-firmware/! s/\bmain\b/main non-free-firmware/
-        }' /etc/apt/sources.list
-        
-        # Limpa eventuais espaços duplos residuais
-        sudo sed -i 's/  */ /g' /etc/apt/sources.list
+        sudo awk '
+        /^[[:space:]]*deb(-src)?[[:space:]]+/ && !/cdrom:/ {
+            if ($0 !~ /(^|[[:space:]])contrib([[:space:]]|$)/) $0 = $0 " contrib"
+            if ($0 !~ /(^|[[:space:]])non-free([[:space:]]|$)/) $0 = $0 " non-free"
+            if ($0 !~ /(^|[[:space:]])non-free-firmware([[:space:]]|$)/) $0 = $0 " non-free-firmware"
+        }
+        { print }
+        ' /etc/apt/sources.list.bak | sudo tee /etc/apt/sources.list >/dev/null
         
         modified=1
     fi
@@ -67,7 +68,12 @@ enable_non_free_repos() {
     if [[ $modified -eq 1 ]]; then
         _msg "Repositórios atualizados com sucesso (backup criado em .bak)."
         printf "${YELLOW}[+]${RST} Atualizando índices do APT...\n"
-        sudo apt-get update -qq && _msg "Índices do APT sincronizados."
+        if sudo apt-get update; then
+            _msg "Índices do APT sincronizados com sucesso!"
+        else
+            _err "Falha ao atualizar os índices do APT. Verifique sua conexão com a internet."
+            return 1
+        fi
     else
         _err "Erro: Nenhum arquivo de fontes (/etc/apt/sources.list ou debian.sources) foi encontrado."
         return 1
@@ -118,7 +124,7 @@ install_lightweight_de() {
     local de_opt
     clear 2>/dev/null || true
     _sep
-    printf "         ${BOLD}SAMBOX - Interfaces Lightweight${RST}     \n"
+    printf "          ${BOLD}SAMBOX - Interfaces Lightweight${RST}     \n"
     _sep
     printf "  ${CYAN}[1]${RST}  LXQt Desktop (Mínimo e Ultra-rápido)\n"
     printf "  ${CYAN}[2]${RST}  XFCE4 Desktop (Clássico e Estável)\n"
@@ -276,20 +282,20 @@ menu_packages_central() {
         clear 2>/dev/null || true
         printf "\n"
         printf "${CYAN}${BOLD}  ╔═══════════════════════════════════════════╗\n"
-        printf " ║          📦  CENTRAL DE PACOTES           ║\n"
+        printf " ║          📦  CENTRAL DE PACOTES            ║\n"
         printf " ╚═══════════════════════════════════════════╝${RST}\n\n"
-        printf "  ${CYAN}[1]${RST}   🔄  Ativar Repositórios (Contrib/Non-Free)\n"
-        printf "  ${CYAN}[2]${RST}   🎮  Auto-Detectar & Instalar Drivers de GPU\n"
-        printf "  ${CYAN}[3]${RST}   🍷  Configurar Ambiente Wine (i386/Limpo)\n"
-        printf "  ${CYAN}[4]${RST}   🌐  Instalar Chromium Web Browser (Nativo/Open-Source)\n"
-        printf "  ${CYAN}[5]${RST}   🖥️   Instalar Interfaces Gráficas Leves\n"
-        printf "  ${CYAN}[6]${RST}   🚀  Atualizar Pacotes do Sistema (APT Upgrade)\n"
-        printf "  ${CYAN}[7]${RST}   💻  Instalar QEMU + Aditivos de Virtualização\n"
-        printf "  ${CYAN}[8]${RST}   🗜️   Instalar File Roller (Compactador Nativo)\n"
-        printf "  ${CYAN}[9]${RST}   ⚡   Instalar Axel (Acelerador de Downloads CLI)\n"
-        printf "  ${CYAN}[10]${RST}  🛠️   Instalar IDEs e Linguagens de Programação\n"
+        printf "  ${CYAN}[1]${RST}    🔄  Ativar Repositórios (Contrib/Non-Free)\n"
+        printf "  ${CYAN}[2]${RST}    🎮  Auto-Detectar & Instalar Drivers de GPU\n"
+        printf "  ${CYAN}[3]${RST}    🍷  Configurar Ambiente Wine (i386/Limpo)\n"
+        printf "  ${CYAN}[4]${RST}    🌐  Instalar Chromium Web Browser (Nativo/Open-Source)\n"
+        printf "  ${CYAN}[5]${RST}    🖥️   Instalar Interfaces Gráficas Leves\n"
+        printf "  ${CYAN}[6]${RST}    🚀  Atualizar Pacotes do Sistema (APT Upgrade)\n"
+        printf "  ${CYAN}[7]${RST}    💻  Instalar QEMU + Aditivos de Virtualização\n"
+        printf "  ${CYAN}[8]${RST}    🗜️   Instalar File Roller (Compactador Nativo)\n"
+        printf "  ${CYAN}[9]${RST}    ⚡   Instalar Axel (Acelerador de Downloads CLI)\n"
+        printf "  ${CYAN}[10]${RST}   🛠️   Instalar IDEs e Linguagens de Programação\n"
         printf "  ${DIM}────────────────────────────────────────────────${RST}\n"
-        printf "  ${CYAN}[0]${RST}   ⬅️   Voltar ao Menu Principal\n\n"
+        printf "  ${CYAN}[0]${RST}    ⬅️   Voltar ao Menu Principal\n\n"
 
         read -rp "  $(printf "${BOLD}")Selecione [0-10]:$(printf "${RST}") " p_menu
         

@@ -4,121 +4,75 @@
 #
 # Copyright (c) 2026, Sam Moreno
 # All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#
-# 1. Redistributions of source code must retain the above copyright notice,
-#    this list of conditions and the following disclaimer.
-#
-# 2. Redistributions in binary form must reproduce the above copyright notice,
-#    this list of conditions and the following disclaimer in the documentation
-#    and/or other materials provided with the distribution.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
 # ============================================================================
 #
 # Módulo: System — Limpeza e Manutenção
 # Função: purge_system_bloat
 #
-# Varre e limpa caches de pacotes (apt/zypper/pacman), logs antigos
-# compactados e limpa com segurança o cache de RAM não utilizado
-# no kernel (drop_caches).
+# Focado exclusivamente no ecossistema Debian. Varre e purga caches do APT,
+# deleta logs antigos rotacionados e força o drop seguro de caches de RAM.
 #
 
 purge_system_bloat() {
     _sep
-    printf "  ${BOLD}${CYAN}🧹  Purge System Bloat${RST}\n\n"
+    printf "  ${BOLD}${CYAN}🧹  Purge System Bloat (Debian Engine)${RST}\n\n"
 
     # ── Verificação de root ─────────────────────────────────────────────────
     if [[ "${EUID}" -ne 0 ]]; then
-        _warn "Algumas operações requerem privilégios de root."
-        _warn "Execute: sudo sambox"
-        printf "\n"
+        _warn "Esta central de manutenção requer privilégios de root."
+        _warn "Execute o motor principal: sudo sambox"
+        _sep
+        return 1
     fi
 
-    # ── 1. Limpeza de cache do gerenciador de pacotes ───────────────────────
-    printf "  ${BOLD}[1/3] Cache do gerenciador de pacotes${RST}\n"
-
+    # ── 1. Limpeza Profunda do APT ──────────────────────────────────────────
+    printf "  ${BOLD}[1/3] Limpeza do Gerenciador de Pacotes (APT)${RST}\n"
+    
     if command -v apt-get &>/dev/null; then
-        _msg "Detectado: APT (Debian/Ubuntu)"
-        if [[ "${EUID}" -eq 0 ]]; then
-            apt-get clean -y 2>/dev/null && _msg "apt cache limpo."
-            apt-get autoremove -y 2>/dev/null && _msg "Pacotes órfãos removidos."
-        else
-            _warn "Pule (requer root): apt-get clean / autoremove"
-        fi
-    elif command -v zypper &>/dev/null; then
-        _msg "Detectado: Zypper (openSUSE/SLES)"
-        if [[ "${EUID}" -eq 0 ]]; then
-            zypper clean --all 2>/dev/null && _msg "zypper cache limpo."
-        else
-            _warn "Pule (requer root): zypper clean"
-        fi
-    elif command -v pacman &>/dev/null; then
-        _msg "Detectado: Pacman (Arch)"
-        if [[ "${EUID}" -eq 0 ]]; then
-            pacman -Scc --noconfirm 2>/dev/null && _msg "pacman cache limpo."
-        else
-            _warn "Pule (requer root): pacman -Scc"
-        fi
+        _msg "Purgando arquivos residuais do repositório..."
+        apt-get clean -y 2>/dev/null
+        apt-get autoclean -y 2>/dev/null && _msg "Caches de pacotes obsoletos limpos."
+        apt-get autoremove --purge -y 2>/dev/null && _msg "Pacotes órfãos e arquivos de configuração purgados."
     else
-        _warn "Gerenciador de pacotes não reconhecido. Pulando."
+        _err "APT não encontrado. Este módulo é exclusivo para sistemas baseados em Debian."
     fi
 
     printf "\n"
 
-    # ── 2. Logs antigos compactados ─────────────────────────────────────────
-    printf "  ${BOLD}[2/3] Logs antigos compactados${RST}\n"
+    # ── 2. Eliminação de Logs Rotacionados e Ociosos ────────────────────────
+    printf "  ${BOLD}[2/3] Remoção de Logs Antigos Compactados${RST}\n"
 
     local log_count=0
     local log_bytes=0
 
+    # Varredura direta e sem fricção via subshel do find
     while IFS= read -r -d '' logfile; do
         local fsize
         fsize="$(stat -c '%s' "${logfile}" 2>/dev/null || echo 0)"
         log_bytes=$(( log_bytes + fsize ))
         log_count=$(( log_count + 1 ))
-        if [[ "${EUID}" -eq 0 ]]; then
-            rm -f "${logfile}"
-        fi
-    done < <(find /var/log -type f \( -name '*.gz' -o -name '*.old' -o -name '*.xz' \) -print0 2>/dev/null)
+        rm -f "${logfile}"
+    done < <(find /var/log -type f \( -name '*.gz' -o -name '*.old' -o -name '*.xz' -o -name '*.1' \) -print0 2>/dev/null)
 
     local log_mb=$(( log_bytes / 1024 / 1024 ))
 
     if [[ "${log_count}" -gt 0 ]]; then
-        if [[ "${EUID}" -eq 0 ]]; then
-            _msg "Removidos ${log_count} arquivo(s) de log antigo (≈${log_mb}MB liberados)."
-        else
-            _warn "Encontrados ${log_count} arquivo(s) de log antigo (≈${log_mb}MB). Requer root para remover."
-        fi
+        _msg "Sucesso: ${log_count} arquivo(s) de log morto deletado (≈${log_mb}MB liberados)."
     else
-        _msg "Nenhum log antigo compactado encontrado."
+        _msg "Nenhum resíduo de log antigo encontrado no sistema."
     fi
 
     printf "\n"
 
-    # ── 3. Drop caches do kernel (seguro) ───────────────────────────────────
-    printf "  ${BOLD}[3/3] Cache de RAM do kernel (drop_caches)${RST}\n"
+    # ── 3. Drop Caches de RAM do Kernel (Performance Bruta) ─────────────────
+    printf "  ${BOLD}[3/3] Liberação Espelhada de RAM (drop_caches)${RST}\n"
 
-    if [[ "${EUID}" -eq 0 ]]; then
-        # sync antes de dropar para evitar perda de dados
-        sync
-        echo 3 > /proc/sys/vm/drop_caches 2>/dev/null \
-            && _msg "Page cache, dentries e inodes liberados." \
-            || _err "Falha ao dropar caches do kernel."
+    # Sincroniza o sistema de arquivos antes do drop para garantir total segurança
+    sync
+    if echo 3 > /proc/sys/vm/drop_caches 2>/dev/null; then
+        _msg "Page cache, dentries e inodes limpos com sucesso direto no Kernel."
     else
-        _warn "Requer root: echo 3 > /proc/sys/vm/drop_caches"
+        _err "Falha crítica ao tentar comunicar com /proc/sys/vm/drop_caches."
     fi
 
     _sep

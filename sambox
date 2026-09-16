@@ -78,7 +78,7 @@ _show_manual() {
         printf "${RST}\n"
         printf "  ${BOLD}SELECIONE O CAPÍTULO PARA LEITURA:${RST}\n\n"
         printf "  ${CYAN}[1]${RST}  📜  Capítulo 1 — Filosofia, Licença BSD & Zero Copyleft\n"
-        printf "  ${CYAN}[2]${RST}  ⚙️   Capítulo 2 — Guia Completo dos Módulos Integdos\n"
+        printf "  ${CYAN}[2]${RST}  ⚙️   Capítulo 2 — Guia Completo dos Módulos Integrados\n"
         printf "  ${CYAN}[3]${RST}  📚  Manual Completo (Modo Pager)\n"
         _sep
         printf "  ${CYAN}[0]${RST}  ⬅️   Voltar ao Menu Principal\n\n"
@@ -114,7 +114,8 @@ ${GREEN}[1] Hardware:${RST}   Diagnóstico térmico e monitoramento de performan
 ${GREEN}[2] Uninstall:${RST}  Central de remoção limpa de softwares e pacotes órfãos.
 ${GREEN}[3] Network:${RST}    Gerenciador rápido de conexões SSH e diagnóstico de rede.
 ${GREEN}[4] Packages:${RST}   Controle do APT, manutenção de repositórios e drivers.
-${GREEN}[5] SysInfo:${RST}    Resumo sintético das especificações do sistema host.
+${GREEN}[5] System:${RST}     Engine Debian para purga de caches residuais e debloat.
+${GREEN}[6] SysInfo:${RST}    Resumo sintético das especificações do sistema host.
 
 (Pressione 'q' para fechar)
 EOF
@@ -129,9 +130,9 @@ ${BOLD}REQUISITOS:${RST} Bash 4.0+ em distribuições Linux POSIX/Debian.
 ${BOLD}LICENÇA:${RST}    BSD 2-Clause
 
 ${CYAN}EXECUÇÃO RÁPIDA:${RST}
-  ./sambox.sh              Abre o menu interativo
-  ./sambox.sh --manual     Abre o leitor interativo de manual direto
-  ./sambox.sh --version    Exibe a versão do sistema
+  ./sambox              Abre o menu interativo
+  ./sambox --manual     Abre o leitor interativo de manual direto
+  ./sambox --version    Exibe a versão do sistema
 
 ${CYAN}FILOSOFIA DE DESENVOLVIMENTO:${RST}
   O Sambox foi concebido para entregar a eficiência de hardware de ponta:
@@ -164,22 +165,24 @@ _main_menu() {
         printf "  ${BOLD}MÓDULOS DISPONÍVEIS${RST}\n\n"
         printf "  ${CYAN}[1]${RST}  🔧  Hardware  — CPU Performance & Diagnostics\n"
         printf "  ${CYAN}[2]${RST}  🗑️   Uninstall — Central de Remoção & Limpeza Profunda\n"
-        printf "  ${CYAN}[3]${RST}  🌐  Network   — SSH Fast Connect Manager\n"
+        printf "  ${CYAN}[3]${RST}  🌐  Network   — SSH Fast Connect Manager & Network Drivers\n"
         printf "  ${CYAN}[4]${RST}  📦  Packages  — APT Control, Drivers & Desktops\n"
-        printf "  ${CYAN}[5]${RST}  ❓  SysInfo   — Concised System Overview\n"
-        printf "  ${CYAN}[6]${RST}  📖  Manual    — Leitor Interativo de Instruções\n"
+        printf "  ${CYAN}[5]${RST}  🧹  System    — Purge System Bloat (Debian Engine)\n"
+        printf "  ${CYAN}[6]${RST}  ❓  SysInfo   — Concise System Overview & Source Dump\n"
+        printf "  ${CYAN}[7]${RST}  📖  Manual    — Leitor Interativo de Instruções\n"
         _sep
         printf "  ${CYAN}[0]${RST}  ❌  Sair\n\n"
 
-        read -rp "  $(printf "${BOLD}")Selecione [0-6]:$(printf "${RST}") " choice
+        read -rp "  $(printf "${BOLD}")Selecione [0-7]:$(printf "${RST}") " choice
 
         case "${choice}" in
-            1) menu_hardware_central        ;;
-            2) menu_uninstall_central ;; # Conectado ao módulo modules/m_uninstall.sh
-            3) ssh_fast_connect      ;;
-            4) menu_packages_central ;; # Conectado ao módulo modules/m_packages.sh
-            5) show_system_info      ;;
-            6) _show_manual          ;;
+            1) menu_hardware_central ;;
+            2) menu_uninstall_central ;; # Conectado ao módulo modules/m_uninstaller.sh
+            3) ssh_fast_connect       ;; # Conectado ao módulo modules/m_network.sh
+            4) menu_packages_central  ;; # Conectado ao módulo modules/m_packages.sh
+            5) purge_system_bloat     ;; # Conectado ao módulo modules/m_system.sh
+            6) show_system_info       ;; # Conectado ao módulo modules/m_sysinfo.sh
+            7) _show_manual           ;;
             0) printf "\n"; _msg "Até logo!"; exit 0 ;;
             *) _warn "Opção inválida. Tente novamente." ;;
         esac
@@ -190,37 +193,34 @@ _main_menu() {
     done
 }
 
-# ── Inicialização ──────────────────────────────────────────────────────────
+# ── Inicialização do Motor Principal ────────────────────────────────────────
 _main() {
-    # Suporte a argumentos via linha de comando
-    case "${1:-}" in
-        -m|--manual|manual)
-            _show_manual
-            exit 0
-            ;;
-        -v|--version)
-            echo "Sambox v${SAMBOX_VERSION} (BSD 2-Clause)"
-            exit 0
-            ;;
-        -h|--help)
-            echo "Uso: ./sambox.sh [OPÇÃO]"
-            echo "Opções:"
-            echo "  -m, --manual   Abre o leitor de manual embutido"
-            echo "  -v, --version  Exibe a versão do Sambox"
-            echo "  -h, --help     Exibe este menu de ajuda"
-            exit 0
-            ;;
-    esac
+    # Carrega as funções internas dos arquivos do diretório modules/
+    _load_modules
 
-    # Verificação mínima de ambiente
-    if [[ "${BASH_VERSINFO[0]}" -lt 4 ]]; then
-        _err "Sambox requer Bash >= 4.0 (detectado: ${BASH_VERSION})"
-        exit 1
+    # Tratamento direto de argumentos via CLI sem firula
+    if [[ $# -gt 0 ]]; then
+        case "$1" in
+            --manual)
+                _show_manual
+                exit 0
+                ;;
+            --version|-v)
+                echo "Sambox Engine v${SAMBOX_VERSION}"
+                exit 0
+                ;;
+            *)
+                _err "Argumento desconhecido: $1"
+                echo "Uso: $0 [--manual | --version | -v]"
+                exit 1
+                ;;
+        esac
     fi
 
-    _load_modules
+    # Se nenhum argumento foi passado, limpa a tela e chama a TUI principal
     clear 2>/dev/null || true
     _main_menu
 }
 
+# Dispara a execução passando os argumentos coletados
 _main "$@"

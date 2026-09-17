@@ -37,8 +37,6 @@ jobs:
       - name: "🛠️ Auditoria de Performance e Sintaxe (ShellCheck)"
         run: |
           printf "\033[36m[SAMBOX QUALITY]:\033[0m Invocando ShellCheck para garantir performance bruta e Bash puro...\n"
-          
-          # Instala o utilitário externo isolado na máquina temporária do GitHub
           sudo apt-get update -y && sudo apt-get install -y shellcheck
           
           # Roda a análise nos módulos e no orquestrador principal

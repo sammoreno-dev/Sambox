@@ -1,17 +1,19 @@
 # ==============================================================================
-# 🛡️ SAMBOX SECURITY GATE - ANTI-GPL WORKFLOW
+# 🛡️ SAMBOX SECURITY GATE - ANTI-GPL & CODE QUALITY WORKFLOW
 # Licença: BSD 2-Clause | Autor: Sam Moreno (Human-Architected, AI-Forged)
 # ==============================================================================
-name: "🛡️ Blindagem de Licença Sambox"
+name: "🛡️ Blindagem de Licença e Qualidade Sambox"
 
 on:
   pull_request:
     branches: [ "main" ]
     paths:
       - 'modules/**'
+      - 'sambox'
+
 jobs:
   auditoria:
-    name: "🔍 Varredura de Código"
+    name: "🔍 Varredura e Qualidade"
     runs-on: ubuntu-latest
     steps:
       - name: "📥 Clonando o Pull Request"
@@ -32,3 +34,19 @@ jobs:
           
           printf "\n\033[32m[SUCESSO]: Módulo validado com licença livre e sem frescura.\033[0m\n"
 
+      - name: "🛠️ Auditoria de Performance e Sintaxe (ShellCheck)"
+        run: |
+          printf "\033[36m[SAMBOX QUALITY]:\033[0m Invocando ShellCheck para garantir performance bruta e Bash puro...\n"
+          
+          # Instala o utilitário externo isolado na máquina temporária do GitHub
+          sudo apt-get update -y && sudo apt-get install -y shellcheck
+          
+          # Roda a análise nos módulos e no orquestrador principal
+          # O parâmetro -e ignora avisos bobos se você quiser (ex: SC1090 para fontes dinâmicos)
+          if ! shellcheck -x modules/*.sh sambox; then
+              printf "\n\033[31m[ERRO TÉCNICO]: Código Bash fora dos padrões de performance ou com riscos de quebra!\033[0m\n"
+              printf "Revise os avisos do ShellCheck acima antes de forçar o merge no Sambox.\n\n"
+              exit 1
+          fi
+          
+          printf "\n\033[32m[SUCESSO]: Sintaxe impecável e pronta para rodar em qualquer batata eletrônica!\033[0m\n"

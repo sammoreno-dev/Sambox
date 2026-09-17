@@ -26,15 +26,23 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # -----------------------------------------------------------------------------
 
+# ── Helper Interno: Habilitação de Arquitetura 32-bits (i386) ───────────────
+_ensure_i386_arch() {
+    if ! dpkg --print-foreign-architectures | grep -q "i386"; then
+        printf "${YELLOW}[+]${RST} Registrando arquitetura i386 no dpkg...\n"
+        sudo dpkg --add-architecture i386
+        sudo apt-get update -y
+    fi
+}
+
 # [1] Função para ativar repositórios contrib, non-free e non-free-firmware
 enable_non_free_repos() {
     printf "\n${YELLOW}[+]${RST} Ativando componentes contrib, non-free e non-free-firmware...\n"
-    
     local modified=0
 
     # 1. Formato DEB822 (Debian 12+ em /etc/apt/sources.list.d/debian.sources)
     if [[ -f /etc/apt/sources.list.d/debian.sources ]]; then
-        sudo cp /etc/apt/sources.list.d/debian.sources /etc/apt/sources.list.d/debian.sources.bak 2>/dev/null
+        sudo cp /etc/apt/sources.list.d/debian.sources /etc/apt/sources.list.d/debian.sources.bak 2>/dev/null || true
         
         sudo sed -i -E '/^Components:/ {
             /(^|[[:space:]])contrib([[:space:]]|$)/! s/$/ contrib/
@@ -47,7 +55,7 @@ enable_non_free_repos() {
 
     # 2. Formato Tradicional (/etc/apt/sources.list)
     if [[ -f /etc/apt/sources.list ]]; then
-        sudo cp /etc/apt/sources.list /etc/apt/sources.list.bak 2>/dev/null
+        sudo cp /etc/apt/sources.list /etc/apt/sources.list.bak 2>/dev/null || true
         
         sudo sed -i -E '/^[[:space:]]*deb(-src)?[[:space:]]+/ {
             /(^|[[:space:]])contrib([[:space:]]|$)/! s/$/ contrib/
@@ -62,7 +70,7 @@ enable_non_free_repos() {
     if [[ $modified -eq 1 ]]; then
         _msg "Repositórios atualizados com sucesso (backup criado em .bak)."
         printf "${YELLOW}[+]${RST} Atualizando índices do APT...\n"
-        if sudo apt-get update; then
+        if sudo apt-get update -y; then
             _msg "Índices do APT sincronizados com sucesso!"
         else
             _err "Falha ao atualizar os índices do APT."
@@ -74,47 +82,45 @@ enable_non_free_repos() {
     fi
 }
 
-
 # [2] Função para instalar drivers de vídeo baseados no hardware detectado
 install_gpu_drivers() {
     printf "\n${BLUE}[=]${RST} Detectando placa de vídeo instalada via lspci...\n"
     local gpu_info
-    gpu_info=$(lspci | grep -iE 'vga|3d')
-    printf "Hardware detectado: ${CYAN}%s${RST}\n" "${gpu_info}"
+    gpu_info=$(lspci | grep -iE 'vga|3d' || true)
+    printf "Hardware detectado: ${CYAN}%s${RST}\n" "${gpu_info:-"Nenhum dispositivo PCI VGA/3D encontrado"}"
+
+    _ensure_i386_arch
 
     if echo "${gpu_info}" | grep -iq "nvidia"; then
         printf "${YELLOW}[+]${RST} GPU NVIDIA detectada. Instalando drivers proprietários e libs 32-bit para Wine...\n"
-        sudo apt install -y linux-headers-amd64 nvidia-driver nvidia-graphics-drivers-libs:i386 nvidia-vulkan-icd nvidia-vulkan-icd:i386
+        sudo apt-get install -y linux-headers-amd64 nvidia-driver nvidia-graphics-drivers-libs:i386 nvidia-vulkan-icd nvidia-vulkan-icd:i386 dwarves
     elif echo "${gpu_info}" | grep -iqE "amd|ati"; then
         printf "${YELLOW}[+]${RST} GPU AMD detectada. Instalando firmware oficial aberto...\n"
-        sudo apt install -y firmware-amd-graphics mesa-vulkan-drivers mesa-vulkan-drivers:i386
+        sudo apt-get install -y firmware-amd-graphics mesa-vulkan-drivers mesa-vulkan-drivers:i386
     elif echo "${gpu_info}" | grep -iq "intel"; then
         printf "${YELLOW}[+]${RST} Gráficos Intel detectados. Instalando firmware complementar...\n"
-        sudo apt install -y firmware-misc-nonfree intel-media-va-driver mesa-vulkan-drivers mesa-vulkan-drivers:i386
+        sudo apt-get install -y firmware-misc-nonfree intel-media-va-driver mesa-vulkan-drivers mesa-vulkan-drivers:i386
     else
         _warn "Nenhuma GPU comum (NVIDIA/AMD/Intel) identificada para automação."
     fi
 }
 
-# [3] Função para instalar o ambiente Wine de forma limpa (sem firulas)
+# [3] Função para instalar o ambiente Wine de forma limpa
 install_wine_clean() {
-    printf "\n${YELLOW}[+]${RST} Habilitando arquitetura de 32-bits (i386)...\n"
-    sudo dpkg --add-architecture i386
-    sudo apt update -y
-    
+    _ensure_i386_arch
     printf "${YELLOW}[+]${RST} Instalando Wine estável e dependências mínimas do sistema...\n"
-    sudo apt install -y wine wine32 wine64 libwine libwine:i386
+    sudo apt-get install -y wine wine32 wine64 libwine libwine:i386
     _msg "Ambiente Wine estruturado com sucesso."
 }
 
-# [4] Instalação do Chromium Web Browser de forma 100% Nativa e Open-Source
+# [4] Instalação do Chromium Web Browser Nativo
 install_chromium_native() {
     printf "\n${YELLOW}[+]${RST} Instalando Chromium Web Browser via APT nativo...\n"
-    sudo apt install -y chromium chromium-l10n
+    sudo apt-get install -y chromium chromium-l10n
     _msg "Chromium instalado com sucesso e sem dependências ocultas!"
 }
 
-# [5] Instalação de Interfaces Leves (GNOME e KDE banidos)
+# [5] Instalação de Interfaces Leves
 install_lightweight_de() {
     local de_opt
     clear 2>/dev/null || true
@@ -131,15 +137,15 @@ install_lightweight_de() {
     case "${de_opt}" in
         1)
             printf "${YELLOW}[+]${RST} Instalando ambiente LXQt mínimo...\n"
-            sudo apt install -y lxqt-core openbox xorg lightdm
+            sudo apt-get install -y lxqt-core openbox xorg lightdm
             ;;
         2)
             printf "${YELLOW}[+]${RST} Instalando ambiente XFCE4 estável...\n"
-            sudo apt install -y xfce4 xfce4-goodies xorg lightdm
+            sudo apt-get install -y xfce4 xfce4-goodies xorg lightdm
             ;;
         3)
             printf "${YELLOW}[+]${RST} Instalando ambiente Cinnamon...\n"
-            sudo apt install -y cinnamon-core xorg lightdm
+            sudo apt-get install -y cinnamon-core xorg lightdm
             ;;
         0) return ;;
         *) _warn "Opção inválida." && sleep 1 ;;
@@ -149,10 +155,10 @@ install_lightweight_de() {
 # [6] Atualização de Pacotes APT
 update_system_packages() {
     printf "\n${BLUE}[+]${RST} Sincronizando índices de pacotes do APT...\n"
-    sudo apt update -y
+    sudo apt-get update -y
 
     printf "${RED}[+]${RST} Atualizando pacotes instalados (Safe Upgrade)...\n"
-    sudo apt upgrade -y
+    sudo apt-get upgrade -y
 
     printf "${GREEN}[✔]${RST} Sistema atualizado com sucesso.\n"
 }
@@ -160,33 +166,43 @@ update_system_packages() {
 # [7] Instalação do QEMU + Aditivos
 install_qemu_virt() {
     printf "\n${BLUE}[+]${RST} Instalando e Adicionando Virtualização...\n"
-    sudo apt install -y qemu-system-x86 qemu-utils libvirt-daemon-system libvirt-clients virt-manager
-    printf "\n${YELLOW}[+]${RST} Instalado QEMU + Aditivos com sucesso.\n"
+    sudo apt-get install -y qemu-system-x86 qemu-utils libvirt-daemon-system libvirt-clients virt-manager
+    _msg "QEMU + Aditivos de virtualização instalados com sucesso."
 }
 
-# [8] Instalação Nativa do File Roller
+# [8] Instalação do Podman + Distrobox (Engine de Contêineres Rootless)
+install_container_stack() {
+    printf "\n${BLUE}[+]${RST} Instalando Podman e Distrobox via repositórios oficiais APT...\n"
+    if sudo apt-get update -y && sudo apt-get install -y podman distrobox; then
+        _msg "Podman e Distrobox implantados com sucesso! (100% Rootless / Sem Daemon)"
+    else
+        _err "Falha ao instalar a stack Podman/Distrobox."
+    fi
+}
+
+# [9] Instalação Nativa do File Roller
 install_file_roller_native() {
     printf "\n${YELLOW}[+]${RST} Instalando File Roller e ferramentas de compressão via APT...\n"
-    sudo apt install -y file-roller p7zip-full unzip zip unrar-free
-    _msg "File Roller impecável instalado de forma 100% nativa!"
+    sudo apt-get install -y file-roller p7zip-full unzip zip unrar-free
+    _msg "File Roller instalado de forma 100% nativa!"
 }
 
-# [9] Instalação do Acelerador de Downloads CLI Axel
+# [10] Instalação do Acelerador de Downloads CLI Axel
 install_axel_accelerator() {
     printf "\n${BLUE}[+]${RST} Instalando acelerador de downloads CLI Axel via APT...\n"
-    sudo apt install -y axel
-    _msg "Axel instalado com sucesso. Prontinho para downloads multi-threaded ultra-rápidos!"
+    sudo apt-get install -y axel
+    _msg "Axel instalado com sucesso. Prontinho para downloads multi-threaded!"
 }
 
-# [10] Sub-menu para Instalação de IDEs e Ambientes de Programação
+# [11] Sub-menu para Instalação de IDEs e Ambientes de Programação
 install_ides_and_languages() {
     local dev_menu
     while true; do
         clear 2>/dev/null || true
         printf "\n"
         printf "${CYAN}${BOLD}  ╔═══════════════════════════════════════════╗\n"
-        printf " ║     💻  IDEs E LINGUAGENS DE PROGRAMAÇÃO  ║\n"
-        printf " ╚═══════════════════════════════════════════╝${RST}\n\n"
+        printf "  ║     💻  IDEs E LINGUAGENS DE PROGRAMAÇÃO  ║\n"
+        printf "  ╚═══════════════════════════════════════════╝${RST}\n\n"
         printf "  ${CYAN}[1]${RST}  ⚡  C/C++ Stack (build-essential, gcc, g++, make, cmake, gdb)\n"
         printf "  ${CYAN}[2]${RST}  🐍  Python 3 Stack (python3-full, pip, venv)\n"
         printf "  ${CYAN}[3]${RST}  🟢  Node.js + npm (Runtime JS/TS Nativo APT)\n"
@@ -205,58 +221,58 @@ install_ides_and_languages() {
         case "${dev_menu}" in
             1)
                 printf "\n${YELLOW}[+]${RST} Instalando toolchain C/C++ via APT...\n"
-                sudo apt update -y && sudo apt install -y build-essential gcc g++ make cmake gdb
+                sudo apt-get update -y && sudo apt-get install -y build-essential gcc g++ make cmake gdb
                 _msg "Ferramentas C/C++ instaladas com sucesso."
                 ;;
             2)
                 printf "\n${YELLOW}[+]${RST} Instalando suporte a Python 3 e venv...\n"
-                sudo apt update -y && sudo apt install -y python3 python3-full python3-pip python3-venv
+                sudo apt-get update -y && sudo apt-get install -y python3 python3-full python3-pip python3-venv
                 _msg "Python 3 Stack instalado com sucesso."
                 ;;
             3)
                 printf "\n${YELLOW}[+]${RST} Instalando Node.js e npm via APT...\n"
-                sudo apt update -y && sudo apt install -y nodejs npm
+                sudo apt-get update -y && sudo apt-get install -y nodejs npm
                 _msg "Node.js e npm instalados."
                 ;;
             4)
                 printf "\n${YELLOW}[+]${RST} Instalando compilador Go/Golang...\n"
-                sudo apt update -y && sudo apt install -y golang
+                sudo apt-get update -y && sudo apt-get install -y golang
                 _msg "Go instalado com sucesso."
                 ;;
             5)
                 printf "\n${YELLOW}[+]${RST} Instalando Rust e Cargo...\n"
-                sudo apt update -y && sudo apt install -y rustc cargo
+                sudo apt-get update -y && sudo apt-get install -y rustc cargo
                 _msg "Rustc e Cargo instalados."
                 ;;
             6)
                 printf "\n${YELLOW}[+]${RST} Instalando IDE Geany e plugins...\n"
-                sudo apt update -y && sudo apt install -y geany geany-plugins
+                sudo apt-get update -y && sudo apt-get install -y geany geany-plugins
                 _msg "Geany IDE instalado."
                 ;;
             7)
                 printf "\n${BLUE}[+]${RST} Configurando repositório oficial APT do VSCodium (Sem Telemetria)...\n"
-                sudo apt update -y && sudo apt install -y wget gpg ca-certificates
+                sudo apt-get update -y && sudo apt-get install -y wget gpg ca-certificates
                 wget -qO - https://gitlab.com/paulcarroty/vscodium-deb-rpm-repo/raw/master/pub.gpg | gpg --dearmor | sudo tee /usr/share/keyrings/vscodium-archive-keyring.gpg > /dev/null
                 echo 'deb [ signed-by=/usr/share/keyrings/vscodium-archive-keyring.gpg ] https://download.vscodium.com/debs vscodium main' | sudo tee /etc/apt/sources.list.d/vscodium.list
-                sudo apt update -y && sudo apt install -y codium
+                sudo apt-get update -y && sudo apt-get install -y codium
                 _msg "VSCodium instalado com sucesso e sem rastreamento."
                 ;;
             8)
                 printf "\n${YELLOW}[+]${RST} Instalando ambiente de desenvolvimento em terminal...\n"
-                sudo apt update -y && sudo apt install -y neovim git tmux curl
+                sudo apt-get update -y && sudo apt-get install -y neovim git tmux curl
                 _msg "Ambiente Dev CLI pronto para uso."
                 ;;
             9)
                 printf "\n${BLUE}[+]${RST} Instalando Kit Dev Completo...\n"
                 export DEBIAN_FRONTEND=noninteractive
-                sudo apt update -y && sudo apt install -y build-essential gcc g++ make cmake gdb python3 python3-full python3-pip python3-venv nodejs npm golang rustc cargo geany geany-plugins neovim git tmux curl ca-certificates-java default-jdk default-jre maven gradle
+                sudo apt-get update -y && sudo apt-get install -y build-essential gcc g++ make cmake gdb python3 python3-full python3-pip python3-venv nodejs npm golang rustc cargo geany geany-plugins neovim git tmux curl ca-certificates-java default-jdk default-jre maven gradle
                 _msg "Kit Dev Completo implantado no sistema!"
                 ;;
             10)
                 printf "\n${BLUE}[+]${RST} Instalando OpenJDK, Maven e Gradle via APT...\n"
                 export DEBIAN_FRONTEND=noninteractive
-                if sudo apt update -y && sudo apt install -y ca-certificates-java default-jre default-jdk maven gradle; then
-                    _msg "Java (JDK/JRE), Maven e Gradle instalados com sucesso! 😁"
+                if sudo apt-get update -y && sudo apt-get install -y ca-certificates-java default-jre default-jdk maven gradle; then
+                    _msg "Java (JDK/JRE), Maven e Gradle instalados com sucesso!"
                 else
                     _err "Falha ao instalar a Java Stack."
                 fi
@@ -277,8 +293,8 @@ menu_packages_central() {
         clear 2>/dev/null || true
         printf "\n"
         printf "${CYAN}${BOLD}  ╔═══════════════════════════════════════════╗\n"
-        printf " ║          📦  CENTRAL DE PACOTES            ║\n"
-        printf " ╚═══════════════════════════════════════════╝${RST}\n\n"
+        printf "  ║          📦  CENTRAL DE PACOTES           ║\n"
+        printf "  ╚═══════════════════════════════════════════╝${RST}\n\n"
         printf "  ${CYAN}[1]${RST}    🔄  Ativar Repositórios (Contrib/Non-Free)\n"
         printf "  ${CYAN}[2]${RST}    🎮  Auto-Detectar & Instalar Drivers de GPU\n"
         printf "  ${CYAN}[3]${RST}    🍷  Configurar Ambiente Wine (i386/Limpo)\n"
@@ -286,13 +302,14 @@ menu_packages_central() {
         printf "  ${CYAN}[5]${RST}    🖥️   Instalar Interfaces Gráficas Leves\n"
         printf "  ${CYAN}[6]${RST}    🚀  Atualizar Pacotes do Sistema (APT Upgrade)\n"
         printf "  ${CYAN}[7]${RST}    💻  Instalar QEMU + Aditivos de Virtualização\n"
-        printf "  ${CYAN}[8]${RST}    🗜️   Instalar File Roller (Compactador Nativo)\n"
-        printf "  ${CYAN}[9]${RST}    ⚡   Instalar Axel (Acelerador de Downloads CLI)\n"
-        printf "  ${CYAN}[10]${RST}   🛠️   Instalar IDEs e Linguagens de Programação\n"
+        printf "  ${CYAN}[8]${RST}    📦  Instalar Podman + Distrobox (Contêineres Rootless)\n"
+        printf "  ${CYAN}[9]${RST}    🗜️   Instalar File Roller (Compactador Nativo)\n"
+        printf "  ${CYAN}[10]${RST}   ⚡  Instalar Axel (Acelerador de Downloads CLI)\n"
+        printf "  ${CYAN}[11]${RST}   🛠️   Instalar IDEs e Linguagens de Programação\n"
         printf "  ${DIM}────────────────────────────────────────────────${RST}\n"
         printf "  ${CYAN}[0]${RST}    ⬅️   Voltar ao Menu Principal\n\n"
 
-        read -rp "  $(printf "${BOLD}")Selecione [0-10]:$(printf "${RST}") " p_menu
+        read -rp "  $(printf "${BOLD}")Selecione [0-11]:$(printf "${RST}") " p_menu
         
         case "${p_menu}" in
             1) enable_non_free_repos ;;
@@ -302,9 +319,10 @@ menu_packages_central() {
             5) install_lightweight_de   ;;
             6) update_system_packages   ;;
             7) install_qemu_virt        ;;
-            8) install_file_roller_native ;;
-            9) install_axel_accelerator   ;;
-            10) install_ides_and_languages ;;
+            8) install_container_stack  ;;
+            9) install_file_roller_native ;;
+            10) install_axel_accelerator   ;;
+            11) install_ides_and_languages ;;
             0) break ;;
             *) _warn "Opção inválida no sub-menu." ;;
         esac

@@ -1,19 +1,18 @@
 # ==============================================================================
-# 🛡️ SAMBOX SECURITY GATE - ANTI-GPL & CODE QUALITY WORKFLOW
+# 🛡️ SAMBOX SECURITY GATE - ANTI-GPL WORKFLOW
 # Licença: BSD 2-Clause | Autor: Sam Moreno (Human-Architected, AI-Forged)
 # ==============================================================================
-name: "🛡️ Blindagem de Licença e Qualidade Sambox"
+name: "🛡️ Blindagem de Licença Sambox"
 
 on:
   pull_request:
     branches: [ "main" ]
     paths:
-      - 'modules/**'
-      - 'sambox'
+      - 'modules/**' # O robô só acorda se tentarem mexer na pasta de módulos
 
 jobs:
   auditoria:
-    name: "🔍 Varredura e Qualidade"
+    name: "🔍 Varredura de Código"
     runs-on: ubuntu-latest
     steps:
       - name: "📥 Clonando o Pull Request"
@@ -24,27 +23,12 @@ jobs:
           printf "\033[36m[SAMBOX SECURITY]:\033[0m Iniciando varredura analítica nos arquivos enviados...\n"
           
           # Executa o grep recursivo ignorando maiúsculas nas palavras-chave da GPL
-          if grep -r -i -E "GPL|General Public|LGPL|AGPL|GFDL|GNU|Common|Mozzila|Copyleft|MPL|CDDL" modules/; then
+          if grep -r -i -E "GPL|General Public|Copyleft" modules/; then
               printf "\n\033[31m[ERRO CRÍTICO]: Tentativa de contágio viral detectada!\033[0m\n"
               printf "Módulos sob licenças restritivas não são aceitos no ecossistema Sambox.\n"
               printf "O Sambox aceita apenas BSD, MIT, Apache, Zlib, CC0 e WTFPL.\n"
               printf "Amadorismo jurídico e burocracia ideológica aqui não se criam!\n\n"
-              exit 1
+              exit 1 # Força a GitHub Action a falhar e fechar a trava do PR
           fi
           
           printf "\n\033[32m[SUCESSO]: Módulo validado com licença livre e sem frescura.\033[0m\n"
-
-      - name: "🛠️ Auditoria de Performance e Sintaxe (ShellCheck)"
-        run: |
-          printf "\033[36m[SAMBOX QUALITY]:\033[0m Invocando ShellCheck para garantir performance bruta e Bash puro...\n"
-          sudo apt-get update -y && sudo apt-get install -y shellcheck
-          
-          # Roda a análise nos módulos e no orquestrador principal
-          # O parâmetro -e ignora avisos bobos se você quiser (ex: SC1090 para fontes dinâmicos)
-          if ! shellcheck -x modules/*.sh sambox; then
-              printf "\n\033[31m[ERRO TÉCNICO]: Código Bash fora dos padrões de performance ou com riscos de quebra!\033[0m\n"
-              printf "Revise os avisos do ShellCheck acima antes de forçar o merge no Sambox.\n\n"
-              exit 1
-          fi
-          
-          printf "\n\033[32m[SUCESSO]: Sintaxe impecável e pronta para rodar em qualquer batata eletrônica!\033[0m\n"

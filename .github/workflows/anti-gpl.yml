@@ -8,7 +8,7 @@ on:
   pull_request:
     branches: [ "main" ]
     paths:
-      - 'modules/**' # O robô só acorda se tentarem mexer na pasta de módulos
+      - 'modules/**'
 
 jobs:
   auditoria:

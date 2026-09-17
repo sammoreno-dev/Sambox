@@ -34,9 +34,24 @@
 
 set -euo pipefail
 
+# ── Ajuste de PATH para Utilitários de Sistema (/sbin, /usr/sbin) ───────────
+export PATH="${PATH}:/sbin:/usr/sbin:/usr/local/sbin"
+
+# ── Resolução de Diretório Real (Suporte Total a Symlinks no $PATH) ─────────
+_resolve_sambox_dir() {
+    local source="${BASH_SOURCE[0]}"
+    local dir=""
+    while [[ -L "${source}" ]]; do
+        dir="$(cd -P "$(dirname "${source}")" >/dev/null 2>&1 && pwd)"
+        source="$(readlink "${source}")"
+        [[ ${source} != /* ]] && source="${dir}/${source}"
+    done
+    cd -P "$(dirname "${source}")" >/dev/null 2>&1 && pwd
+}
+
 # ── Constantes Globais ──────────────────────────────────────────────────────
 readonly SAMBOX_VERSION="0.2.0"
-readonly SAMBOX_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly SAMBOX_DIR="$(_resolve_sambox_dir)"
 readonly MODULES_DIR="${SAMBOX_DIR}/modules"
 
 # ── Paleta de Cores e Estilos ANSI ──────────────────────────────────────────
@@ -120,7 +135,7 @@ ${BOLD}2. Licenciamento BSD 2-Clause (Permissivo):${RST}
 - Projetado para auditoria simples e zero custos computacionais desnecessários.
 
 ${BOLD}3. Arquitetura Standalone:${RST}
-- Pode rodar diretamente via terminal sem instalar dependências externas.
+- Pode rodar diretamente via terminal de qualquer pasta via symlink no PATH.
 - Baixo consumo de memória e execução em milissegundos.
 
 (Pressione 'q' para fechar)
@@ -136,7 +151,7 @@ ${GREEN}[2] Uninstall:${RST}  Central de remoção limpa de softwares e pacotes 
 ${GREEN}[3] Network:${RST}    Gerenciador rápido de conexões SSH e diagnóstico de rede.
 ${GREEN}[4] Packages:${RST}   Controle do APT, manutenção de repositórios e drivers.
 ${GREEN}[5] System:${RST}     Engine Debian para purga de caches residuais e debloat.
-${GREEN}[6] SysInfo:${RST}    Resumo sintético das especificações do sistema host.
+${GREEN}[6] SysInfo:${RST}    Resumo sintético e auditoria do sistema host.
 
 (Pressione 'q' para fechar)
 EOF
@@ -152,12 +167,12 @@ ${BOLD}REQUISITOS:${RST} Bash 4.0+ em distribuições Linux POSIX/Debian.
 ${BOLD}LICENÇA:${RST}    BSD 2-Clause
 
 ${CYAN}EXECUÇÃO RÁPIDA (MODO CLI):${RST}
-  ./sambox              Abre a TUI interativa do sistema
-  ./sambox --manual     Abre o leitor de manual
-  ./sambox --clean      Executa a limpeza profunda do sistema via CLI
-  ./sambox --sysinfo    Exibe informações sintéticas do hardware/SO
-  ./sambox --update     Atualiza os índices APT e executa safe-upgrade
-  ./sambox --version    Exibe a versão instalada
+  sambox             Abre a TUI interativa do sistema
+  sambox --manual    Abre o leitor de manual
+  sambox --clean     Executa a limpeza profunda do sistema via CLI
+  sambox --sysinfo   Exibe informações sintéticas do hardware/SO
+  sambox --update    Atualiza os índices APT e executa safe-upgrade
+  sambox --version   Exibe a versão instalada
 
 (Pressione 'q' para fechar)
 EOF
@@ -172,7 +187,8 @@ EOF
 # ── Carregamento Dinâmico e Seguro de Módulos ──────────────────────────────
 _load_modules() {
     if [[ ! -d "${MODULES_DIR}" ]]; then
-        _err "Diretório de módulos não encontrado em: ${MODULES_DIR}"
+        _err "Diretório de módulos não encontrado!"
+        _err "Caminho procurado: ${MODULES_DIR}"
         exit 1
     fi
 
@@ -212,13 +228,13 @@ _show_help() {
     echo "Sambox Engine v${SAMBOX_VERSION} — Toolbox de Administração"
     echo "Uso: $0 [opção]"
     echo ""
-    echo "Opções dispoíveis:"
-    echo "  --manual       Abre o leitor interativo de instruções"
-    echo "  --clean        Executa diretamente a limpeza profunda de sistema (purge_system_bloat)"
-    echo "  --sysinfo      Exibe a síntese de especificações de hardware e SO"
-    echo "  --update       Executa a atualização de repositórios e pacotes APT"
-    echo "  --version, -v  Exibe a versão do Sambox"
-    echo "  --help, -h     Exibe este menu de ajuda"
+    echo "Opções disponíveis:"
+    echo "  --manual        Abre o leitor interativo de instruções"
+    echo "  --clean         Executa diretamente a limpeza profunda de sistema (purge_system_bloat)"
+    echo "  --sysinfo       Exibe a síntese de especificações de hardware e SO"
+    echo "  --update        Executa a atualização de repositórios e pacotes APT"
+    echo "  --version, -v   Exibe a versão do Sambox"
+    echo "  --help, -h      Exibe este menu de ajuda"
 }
 
 # ── Menu Principal TUI ─────────────────────────────────────────────────────

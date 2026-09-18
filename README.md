@@ -32,7 +32,7 @@ O nome **Sambox** reflete a união entre autoria, utilidade pragmática e design
 Clone o repositório estável e configure as permissões de execução do motor principal:
 
 ```bash
-git clone https://github.com && cd Sambox && chmod +x sambox
+git clone https://github.com/sammoreno-dev/Sambox.git && cd Sambox && chmod +x sambox
 ```
 
 Execute a ferramenta interativa diretamente:

@@ -2,8 +2,12 @@
 # Sambox - Central Unificada de Redes, Protocolos e Diagnósticos
 # Copyright (c) 2026, Sam Moreno. Licença BSD 2-Clause.
 
-# Inicialização e proteção de permissões do banco de aliases do Sambox
-readonly _SSH_ALIASES_FILE="${HOME}/.sambox/.ssh_aliases"
+# CORREÇÃO PARA HOT-RELOAD: Define o banco apenas se ele ainda não existir na memória da sessão
+if [[ ! -v _SSH_ALIASES_FILE ]]; then
+    export _SSH_ALIASES_FILE="${HOME}/.sambox/.ssh_aliases"
+fi
+
+# Inicialização segura e proteção estrita de permissões do banco de aliases do Sambox
 [[ ! -f "${_SSH_ALIASES_FILE}" ]] && mkdir -p "$(dirname "${_SSH_ALIASES_FILE}")" 2>/dev/null && touch "${_SSH_ALIASES_FILE}" && chmod 600 "${_SSH_ALIASES_FILE}" 2>/dev/null
 
 ssh_fast_connect() {
@@ -22,7 +26,7 @@ ssh_fast_connect() {
         printf "  ${DIM}─────────────────────────────────────────────────────────────────${RST}\n"
         printf "  ${GREEN}[0]${RST}  ⬅️   Voltar ao Menu Principal\n\n"
 
-        read -rp "  $(printf "${BOLD}")Selecione uma opção [0-6]:$(printf "${RST}") " net_choice
+        read -rp "  $(printf "${BOLD}")Selecione o painel de rede [0-6]:$(printf "${RST}") " net_choice
         [[ "${net_choice}" == "0" || -z "${net_choice}" ]] && break
 
         case "${net_choice}" in
@@ -32,12 +36,11 @@ ssh_fast_connect() {
             4) _check_public_ip_dns ;;   # Função isolada em m_network_diag.sh
             5) _check_listening_ports ;; # Função isolada em m_network_diag.sh
             6) install_network_firmware ;; # Função isolada em m_network_diag.sh
-            *) _warn "Opção inválida no menu de rede." ;;
+            *) _warn "Opção inválida para o barramento de rede." ;;
         esac
-        printf "\n"; read -rp "  Pressione [ENTER] para continuar..." _
+        printf "\n"; read -rp "  Pressione [ENTER] para retornar ao painel de redes..." _
     done
 }
 
 # Auto-registro na árvore de módulos vivos do Sambox mestre
 register_sambox_module "🌐  Gerenciador de Redes, SSH & Protocolos" "ssh_fast_connect"
-

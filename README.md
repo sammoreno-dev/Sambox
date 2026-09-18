@@ -115,7 +115,7 @@ Sambox/
 
 ## ⚖️ Licença e Governança
 
-Distribuído sob os termos estáveis da **BSD 2-Clause License (Simplified)** — veja o arquivo [LICENSE](https://github.com) para detalhes técnicos. 
+Distribuído sob os termos estáveis da **BSD 2-Clause License (Simplified)** — veja o arquivo [LICENSE](https://github.com/sammoreno-dev/Sambox/blob/main/LICENSE) para detalhes técnicos. 
 
 Uma licença pacífica, pragmática, comercialmente livre, amigável para embutir em soluções corporativas e totalmente limpa de policiamentos ideológicos ou contaminações de licenças copyleft virais.
 

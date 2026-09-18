@@ -1,332 +1,87 @@
 #!/usr/bin/env bash
-# -----------------------------------------------------------------------------
-# Sambox - Módulo de Gerenciamento de Pacotes e Repositórios (APT)
-# Copyright (c) 2026, Sam Moreno
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#
-# 1. Redistributions of source code must retain the above copyright notice, this
-#    list of conditions and the following disclaimer.
-#
-# 2. Redistributions in binary form must reproduce the above copyright notice,
-#    this list of conditions and the following disclaimer in the documentation
-#    and/or other materials provided with the distribution.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-# -----------------------------------------------------------------------------
+# Sambox - Mini-Orquestrador de Gerenciamento de Software e Ambientes
+# Copyright (c) 2026, Sam Moreno. Licença BSD 2-Clause.
 
-# ── Helper Interno: Habilitação de Arquitetura 32-bits (i386) ───────────────
-_ensure_i386_arch() {
-    if ! dpkg --print-foreign-architectures | grep -q "i386"; then
-        printf "${YELLOW}[+]${RST} Registrando arquitetura i386 no dpkg...\n"
-        sudo dpkg --add-architecture i386
-        sudo apt-get update -y
-    fi
-}
-
-# [1] Função para ativar repositórios contrib, non-free e non-free-firmware
-enable_non_free_repos() {
-    printf "\n${YELLOW}[+]${RST} Ativando componentes contrib, non-free e non-free-firmware...\n"
-    local modified=0
-
-    # 1. Formato DEB822 (Debian 12+ em /etc/apt/sources.list.d/debian.sources)
-    if [[ -f /etc/apt/sources.list.d/debian.sources ]]; then
-        sudo cp /etc/apt/sources.list.d/debian.sources /etc/apt/sources.list.d/debian.sources.bak 2>/dev/null || true
-        
-        sudo sed -i -E '/^Components:/ {
-            /(^|[[:space:]])contrib([[:space:]]|$)/! s/$/ contrib/
-            /(^|[[:space:]])non-free([[:space:]]|$)/! s/$/ non-free/
-            /(^|[[:space:]])non-free-firmware([[:space:]]|$)/! s/$/ non-free-firmware/
-        }' /etc/apt/sources.list.d/debian.sources
-        
-        modified=1
-    fi
-
-    # 2. Formato Tradicional (/etc/apt/sources.list)
-    if [[ -f /etc/apt/sources.list ]]; then
-        sudo cp /etc/apt/sources.list /etc/apt/sources.list.bak 2>/dev/null || true
-        
-        sudo sed -i -E '/^[[:space:]]*deb(-src)?[[:space:]]+/ {
-            /(^|[[:space:]])contrib([[:space:]]|$)/! s/$/ contrib/
-            /(^|[[:space:]])non-free([[:space:]]|$)/! s/$/ non-free/
-            /(^|[[:space:]])non-free-firmware([[:space:]]|$)/! s/$/ non-free-firmware/
-        }' /etc/apt/sources.list
-        
-        modified=1
-    fi
-
-    # 3. Validação e Atualização
-    if [[ $modified -eq 1 ]]; then
-        _msg "Repositórios atualizados com sucesso (backup criado em .bak)."
-        printf "${YELLOW}[+]${RST} Atualizando índices do APT...\n"
-        if sudo apt-get update -y; then
-            _msg "Índices do APT sincronizados com sucesso!"
-        else
-            _err "Falha ao atualizar os índices do APT."
-            return 1
-        fi
-    else
-        _err "Erro: Nenhum arquivo de fontes (/etc/apt/sources.list ou debian.sources) foi encontrado."
-        return 1
-    fi
-}
-
-# [2] Função para instalar drivers de vídeo baseados no hardware detectado
-install_gpu_drivers() {
-    printf "\n${BLUE}[=]${RST} Detectando placa de vídeo instalada via lspci...\n"
-    local gpu_info
-    gpu_info=$(lspci | grep -iE 'vga|3d' || true)
-    printf "Hardware detectado: ${CYAN}%s${RST}\n" "${gpu_info:-"Nenhum dispositivo PCI VGA/3D encontrado"}"
-
-    _ensure_i386_arch
-
-    if echo "${gpu_info}" | grep -iq "nvidia"; then
-        printf "${YELLOW}[+]${RST} GPU NVIDIA detectada. Instalando drivers proprietários e libs 32-bit para Wine...\n"
-        sudo apt-get install -y linux-headers-amd64 nvidia-driver nvidia-graphics-drivers-libs:i386 nvidia-vulkan-icd nvidia-vulkan-icd:i386 dwarves
-    elif echo "${gpu_info}" | grep -iqE "amd|ati"; then
-        printf "${YELLOW}[+]${RST} GPU AMD detectada. Instalando firmware oficial aberto...\n"
-        sudo apt-get install -y firmware-amd-graphics mesa-vulkan-drivers mesa-vulkan-drivers:i386
-    elif echo "${gpu_info}" | grep -iq "intel"; then
-        printf "${YELLOW}[+]${RST} Gráficos Intel detectados. Instalando firmware complementar...\n"
-        sudo apt-get install -y firmware-misc-nonfree intel-media-va-driver mesa-vulkan-drivers mesa-vulkan-drivers:i386
-    else
-        _warn "Nenhuma GPU comum (NVIDIA/AMD/Intel) identificada para automação."
-    fi
-}
-
-# [3] Função para instalar o ambiente Wine de forma limpa
-install_wine_clean() {
-    _ensure_i386_arch
-    printf "${YELLOW}[+]${RST} Instalando Wine estável e dependências mínimas do sistema...\n"
-    sudo apt-get install -y wine wine32 wine64 libwine libwine:i386
-    _msg "Ambiente Wine estruturado com sucesso."
-}
-
-# [4] Instalação do Chromium Web Browser Nativo
-install_chromium_native() {
-    printf "\n${YELLOW}[+]${RST} Instalando Chromium Web Browser via APT nativo...\n"
-    sudo apt-get install -y chromium chromium-l10n
-    _msg "Chromium instalado com sucesso e sem dependências ocultas!"
-}
-
-# [5] Instalação de Interfaces Leves
-install_lightweight_de() {
-    local de_opt
-    clear 2>/dev/null || true
-    _sep
-    printf "          ${BOLD}SAMBOX - Interfaces Lightweight${RST}     \n"
-    _sep
-    printf "  ${CYAN}[1]${RST}  LXQt Desktop (Mínimo e Ultra-rápido)\n"
-    printf "  ${CYAN}[2]${RST}  XFCE4 Desktop (Clássico e Estável)\n"
-    printf "  ${CYAN}[3]${RST}  Cinnamon Desktop (Moderno e Tradicional)\n"
-    _sep
-    printf "  ${CYAN}[0]${RST}  Voltar ao menu de pacotes\n\n"
-    read -rp "  $(printf "${BOLD}")Escolha a interface:$(printf "${RST}") " de_opt
-
-    case "${de_opt}" in
-        1)
-            printf "${YELLOW}[+]${RST} Instalando ambiente LXQt mínimo...\n"
-            sudo apt-get install -y lxqt-core openbox xorg lightdm
-            ;;
-        2)
-            printf "${YELLOW}[+]${RST} Instalando ambiente XFCE4 estável...\n"
-            sudo apt-get install -y xfce4 xfce4-goodies xorg lightdm
-            ;;
-        3)
-            printf "${YELLOW}[+]${RST} Instalando ambiente Cinnamon...\n"
-            sudo apt-get install -y cinnamon-core xorg lightdm
-            ;;
-        0) return ;;
-        *) _warn "Opção inválida." && sleep 1 ;;
-    esac
-}
-
-# [6] Atualização de Pacotes APT
-update_system_packages() {
-    printf "\n${BLUE}[+]${RST} Sincronizando índices de pacotes do APT...\n"
-    sudo apt-get update -y
-
-    printf "${RED}[+]${RST} Atualizando pacotes instalados (Safe Upgrade)...\n"
-    sudo apt-get upgrade -y
-
-    printf "${GREEN}[✔]${RST} Sistema atualizado com sucesso.\n"
-}
-
-# [7] Instalação do QEMU + Aditivos
-install_qemu_virt() {
-    printf "\n${BLUE}[+]${RST} Instalando e Adicionando Virtualização...\n"
-    sudo apt-get install -y qemu-system-x86 qemu-utils libvirt-daemon-system libvirt-clients virt-manager
-    _msg "QEMU + Aditivos de virtualização instalados com sucesso."
-}
-
-# [8] Instalação do Podman + Distrobox (Engine de Contêineres Rootless)
-install_container_stack() {
-    printf "\n${BLUE}[+]${RST} Instalando Podman e Distrobox via repositórios oficiais APT...\n"
-    if sudo apt-get update -y && sudo apt-get install -y podman distrobox; then
-        _msg "Podman e Distrobox implantados com sucesso! (100% Rootless / Sem Daemon)"
-    else
-        _err "Falha ao instalar a stack Podman/Distrobox."
-    fi
-}
-
-# [9] Instalação Nativa do File Roller
-install_file_roller_native() {
-    printf "\n${YELLOW}[+]${RST} Instalando File Roller e ferramentas de compressão via APT...\n"
-    sudo apt-get install -y file-roller p7zip-full unzip zip unrar-free
-    _msg "File Roller instalado de forma 100% nativa!"
-}
-
-# [10] Instalação do Acelerador de Downloads CLI Axel
-install_axel_accelerator() {
-    printf "\n${BLUE}[+]${RST} Instalando acelerador de downloads CLI Axel via APT...\n"
-    sudo apt-get install -y axel
-    _msg "Axel instalado com sucesso. Prontinho para downloads multi-threaded!"
-}
-
-# [11] Sub-menu para Instalação de IDEs e Ambientes de Programação
-install_ides_and_languages() {
-    local dev_menu
+# [Submenu] Pilha de Contêineres DevOps (Podman & Distrobox)
+_submenu_containers() {
+    local c_choice=""
     while true; do
         clear 2>/dev/null || true
-        printf "\n"
-        printf "${CYAN}${BOLD}  ╔═══════════════════════════════════════════╗\n"
-        printf "  ║     💻  IDEs E LINGUAGENS DE PROGRAMAÇÃO  ║\n"
+        printf "\n${GREEN}${BOLD}  ╔═══════════════════════════════════════════╗\n"
+        printf "  ║     🐳  CENTRAL DE CONTÊINERES ROOTLESS   ║\n"
         printf "  ╚═══════════════════════════════════════════╝${RST}\n\n"
-        printf "  ${CYAN}[1]${RST}  ⚡  C/C++ Stack (build-essential, gcc, g++, make, cmake, gdb)\n"
-        printf "  ${CYAN}[2]${RST}  🐍  Python 3 Stack (python3-full, pip, venv)\n"
-        printf "  ${CYAN}[3]${RST}  🟢  Node.js + npm (Runtime JS/TS Nativo APT)\n"
-        printf "  ${CYAN}[4]${RST}  🦫  Go / Golang (Compiler & Tools via APT)\n"
-        printf "  ${CYAN}[5]${RST}  🦀  Rust & Cargo (Toolchain Nativa APT)\n"
-        printf "  ${CYAN}[6]${RST}  📐  Geany (IDE Ultra-Leve GTK - Excelente para Debian)\n"
-        printf "  ${CYAN}[7]${RST}  💻  VSCodium (VS Code Open-Source sem Telemetria via APT)\n"
-        printf "  ${CYAN}[8]${RST}  📝  Neovim + Git + Tmux + Curl (Ambiente Dev CLI)\n"
-        printf "  ${CYAN}[9]${RST}  🚀  Instalar Kit Dev Completo (Todas as Linguagens + IDEs)\n"
-        printf "  ${CYAN}[10]${RST} ☕  Java Stack (OpenJDK + Maven + Gradle)\n"
-        printf "  ${DIM}────────────────────────────────────────────────${RST}\n"
-        printf "  ${CYAN}[0]${RST}  ⬅️   Voltar à Central de Pacotes\n\n"
+        printf "  ${GREEN}[1]${RST}    📦  Instalar apenas Podman (Engine Nativa Sem Daemon)\n"
+        printf "  ${GREEN}[2]${RST}    🚀  Instalar Podman + Distrobox (Qualquer Distro na CLI)\n"
+        printf "  ${DIM}─────────────────────────────────────────────────────────────────${RST}\n"
+        printf "  ${GREEN}[0]${RST}    ⬅️   Voltar ao Menu de Pacotes\n\n"
 
-        read -rp "  $(printf "${BOLD}")Selecione [0-10]:$(printf "${RST}") " dev_menu
+        read -rp "  $(printf "${BOLD}")Selecione o ambiente desejado [0-2]:$(printf "${RST}") " c_choice
+        [[ "${c_choice}" == "0" || -z "${c_choice}" ]] && break
 
-        case "${dev_menu}" in
-            1)
-                printf "\n${YELLOW}[+]${RST} Instalando toolchain C/C++ via APT...\n"
-                sudo apt-get update -y && sudo apt-get install -y build-essential gcc g++ make cmake gdb
-                _msg "Ferramentas C/C++ instaladas com sucesso."
-                ;;
-            2)
-                printf "\n${YELLOW}[+]${RST} Instalando suporte a Python 3 e venv...\n"
-                sudo apt-get update -y && sudo apt-get install -y python3 python3-full python3-pip python3-venv
-                _msg "Python 3 Stack instalado com sucesso."
-                ;;
-            3)
-                printf "\n${YELLOW}[+]${RST} Instalando Node.js e npm via APT...\n"
-                sudo apt-get update -y && sudo apt-get install -y nodejs npm
-                _msg "Node.js e npm instalados."
-                ;;
-            4)
-                printf "\n${YELLOW}[+]${RST} Instalando compilador Go/Golang...\n"
-                sudo apt-get update -y && sudo apt-get install -y golang
-                _msg "Go instalado com sucesso."
-                ;;
-            5)
-                printf "\n${YELLOW}[+]${RST} Instalando Rust e Cargo...\n"
-                sudo apt-get update -y && sudo apt-get install -y rustc cargo
-                _msg "Rustc e Cargo instalados."
-                ;;
-            6)
-                printf "\n${YELLOW}[+]${RST} Instalando IDE Geany e plugins...\n"
-                sudo apt-get update -y && sudo apt-get install -y geany geany-plugins
-                _msg "Geany IDE instalado."
-                ;;
-            7)
-                printf "\n${BLUE}[+]${RST} Configurando repositório oficial APT do VSCodium (Sem Telemetria)...\n"
-                sudo apt-get update -y && sudo apt-get install -y wget gpg ca-certificates
-                wget -qO - https://gitlab.com/paulcarroty/vscodium-deb-rpm-repo/raw/master/pub.gpg | gpg --dearmor | sudo tee /usr/share/keyrings/vscodium-archive-keyring.gpg > /dev/null
-                echo 'deb [ signed-by=/usr/share/keyrings/vscodium-archive-keyring.gpg ] https://download.vscodium.com/debs vscodium main' | sudo tee /etc/apt/sources.list.d/vscodium.list
-                sudo apt-get update -y && sudo apt-get install -y codium
-                _msg "VSCodium instalado com sucesso e sem rastreamento."
-                ;;
-            8)
-                printf "\n${YELLOW}[+]${RST} Instalando ambiente de desenvolvimento em terminal...\n"
-                sudo apt-get update -y && sudo apt-get install -y neovim git tmux curl
-                _msg "Ambiente Dev CLI pronto para uso."
-                ;;
-            9)
-                printf "\n${BLUE}[+]${RST} Instalando Kit Dev Completo...\n"
-                export DEBIAN_FRONTEND=noninteractive
-                sudo apt-get update -y && sudo apt-get install -y build-essential gcc g++ make cmake gdb python3 python3-full python3-pip python3-venv nodejs npm golang rustc cargo geany geany-plugins neovim git tmux curl ca-certificates-java default-jdk default-jre maven gradle
-                _msg "Kit Dev Completo implantado no sistema!"
-                ;;
-            10)
-                printf "\n${BLUE}[+]${RST} Instalando OpenJDK, Maven e Gradle via APT...\n"
-                export DEBIAN_FRONTEND=noninteractive
-                if sudo apt-get update -y && sudo apt-get install -y ca-certificates-java default-jre default-jdk maven gradle; then
-                    _msg "Java (JDK/JRE), Maven e Gradle instalados com sucesso!"
-                else
-                    _err "Falha ao instalar a Java Stack."
-                fi
-                ;;
-            0) break ;;
-            *) _warn "Opção inválida no sub-menu de desenvolvimento." ;;
+        case "${c_choice}" in
+            # CORREÇÃO CRÍTICA: Removidos os colchetes desnecessários que travavam o motor
+            1) if declare -f _exec_install_podman >/dev/null 2>&1; then _exec_install_podman 0; else install_podman_devops 0; fi ;;
+            2) if declare -f _exec_install_podman >/dev/null 2>&1; then _exec_install_podman 1; else install_podman_devops 1; fi ;;
+            *) _warn "Opção inválida para a pilha devops." ;;
         esac
-
-        printf "\n"
-        read -rp "  Pressione [ENTER] para continuar..." _
+        printf "\n"; read -rp "  Pressione [ENTER] para continuar..." _
     done
 }
 
-# ── Função Orquestradora Principal do Módulo (Sempre no final) ──────────────
+# [Submenu] Pilha de Hipervisor (QEMU-KVM com Escolha de Interface)
+_submenu_virtualization() {
+    local v_choice=""
+    while true; do
+        clear 2>/dev/null || true
+        printf "\n${GREEN}${BOLD}  ╔═══════════════════════════════════════════╗\n"
+        printf "  ║     🖥️   CENTRAL DE VIRTUALIZAÇÃO KVM      ║\n"
+        printf "  ╚═══════════════════════════════════════════╝${RST}\n\n"
+        printf "  ${GREEN}[1]${RST}    🧱  Instalar QEMU-KVM Bare-Metal (Modo Headless de Servidor)\n"
+        printf "  ${GREEN}[2]${RST}    🖥️   Instalar QEMU-KVM + Virt-Manager (Gerenciador Gráfico TUI/GUI)\n"
+        printf "  ${DIM}─────────────────────────────────────────────────────────────────${RST}\n"
+        printf "  ${GREEN}[0]${RST}    ⬅️   Voltar ao Menu de Pacotes\n\n"
+
+        read -rp "  $(printf "${BOLD}")Selecione a infraestrutura [0-2]:$(printf "${RST}") " v_choice
+        [[ "${v_choice}" == "0" || -z "${v_choice}" ]] && break
+
+        case "${v_choice}" in
+            # CORREÇÃO CRÍTICA: Removidos os colchetes desnecessários que travavam o motor
+            1) if declare -f _exec_install_kvm >/dev/null 2>&1; then _exec_install_kvm 0; else install_qemu_kvm_infra 0; fi ;;
+            2) if declare -f _exec_install_kvm >/dev/null 2>&1; then _exec_install_kvm 1; else install_qemu_kvm_infra 1; fi ;;
+            *) _warn "Opção inválida para a pilha hipervisor." ;;
+        esac
+        printf "\n"; read -rp "  Pressione [ENTER] para continuar..." _
+    done
+}
+
+# Menu Principal do Módulo de Pacotes
 menu_packages_central() {
-    local p_menu
+    local p_menu=""
     while true; do
         clear 2>/dev/null || true
-        printf "\n"
-        printf "${CYAN}${BOLD}  ╔═══════════════════════════════════════════╗\n"
-        printf "  ║          📦  CENTRAL DE PACOTES           ║\n"
+        printf "\n${GREEN}${BOLD}  ╔═══════════════════════════════════════════╗\n"
+        printf "  ║     📦  GERENCIADOR DE PACOTES & INFRA    ║\n"
         printf "  ╚═══════════════════════════════════════════╝${RST}\n\n"
-        printf "  ${CYAN}[1]${RST}    🔄  Ativar Repositórios (Contrib/Non-Free)\n"
-        printf "  ${CYAN}[2]${RST}    🎮  Auto-Detectar & Instalar Drivers de GPU\n"
-        printf "  ${CYAN}[3]${RST}    🍷  Configurar Ambiente Wine (i386/Limpo)\n"
-        printf "  ${CYAN}[4]${RST}    🌐  Instalar Chromium Web Browser (Nativo/Open-Source)\n"
-        printf "  ${CYAN}[5]${RST}    🖥️   Instalar Interfaces Gráficas Leves\n"
-        printf "  ${CYAN}[6]${RST}    🚀  Atualizar Pacotes do Sistema (APT Upgrade)\n"
-        printf "  ${CYAN}[7]${RST}    💻  Instalar QEMU + Aditivos de Virtualização\n"
-        printf "  ${CYAN}[8]${RST}    📦  Instalar Podman + Distrobox (Contêineres Rootless)\n"
-        printf "  ${CYAN}[9]${RST}    🗜️   Instalar File Roller (Compactador Nativo)\n"
-        printf "  ${CYAN}[10]${RST}   ⚡  Instalar Axel (Acelerador de Downloads CLI)\n"
-        printf "  ${CYAN}[11]${RST}   🛠️   Instalar IDEs e Linguagens de Programação\n"
-        printf "  ${DIM}────────────────────────────────────────────────${RST}\n"
-        printf "  ${CYAN}[0]${RST}    ⬅️   Voltar ao Menu Principal\n\n"
+        printf "  ${GREEN}[1]${RST}    🔧  Ativar Repositórios Não-Livres (contrib/non-free)\n"
+        printf "  ${GREEN}[2]${RST}    🎮  Habilitar Arquitetura Multiarch i386 (Wine/Jogos Nativos)\n"
+        printf "  ${GREEN}[3]${RST}    🖥️   Central de Virtualização Hypervisor (QEMU-KVM de Alta Performance)\n"
+        printf "  ${GREEN}[4]${RST}    🐳  Central de Contêineres e DevOps Sem Raiz (Podman/Distrobox)\n"
+        printf "  ${DIM}─────────────────────────────────────────────────────────────────${RST}\n"
+        printf "  ${GREEN}[0]${RST}    ⬅️   Voltar ao Menu Principal\n\n"
 
-        read -rp "  $(printf "${BOLD}")Selecione [0-11]:$(printf "${RST}") " p_menu
-        
+        read -rp "  $(printf "${BOLD}")Selecione o deploy desejado [0-4]:$(printf "${RST}") " p_menu
+        [[ "${p_menu}" == "0" || -z "${p_menu}" ]] && break
+
         case "${p_menu}" in
-            1) enable_non_free_repos ;;
-            2) install_gpu_drivers   ;;
-            3) install_wine_clean    ;;
-            4) install_chromium_native ;;
-            5) install_lightweight_de   ;;
-            6) update_system_packages   ;;
-            7) install_qemu_virt        ;;
-            8) install_container_stack  ;;
-            9) install_file_roller_native ;;
-            10) install_axel_accelerator   ;;
-            11) install_ides_and_languages ;;
-            0) break ;;
-            *) _warn "Opção inválida no sub-menu." ;;
+            # CORREÇÃO CRÍTICA: Substituído o operador '&&' inline por um bloco 'if' puro para evitar vazamento de saída
+            1) if declare -f enable_non_free_repos >/dev/null 2>&1; then enable_non_free_repos; else _warn "Módulo repositório indisponível."; fi ;;
+            2) if declare -f _ensure_i386_arch >/dev/null 2>&1; then _ensure_i386_arch; else _warn "Módulo multiarch indisponível."; fi ;;
+            3) _submenu_virtualization ;;
+            4) _submenu_containers ;;
+            *) _warn "Opção inválida para o painel de softwares." ;;
         esac
-        printf "\n"
-        read -rp "  Pressione [ENTER] para continuar..." _
     done
 }
+
+# Auto-registro independente no painel mestre
+register_sambox_module "📦  Gerenciador de Pacotes e Infraestrutura" "menu_packages_central"
